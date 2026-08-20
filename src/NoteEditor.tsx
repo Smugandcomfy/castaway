@@ -12,6 +12,9 @@ export function NoteEditor({ entryId }: { entryId: string }) {
   /// when the write rejected, and left the rejection unhandled.
   const [status, setStatus] = useState<"idle" | "saved" | "failed">("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /// The last body the canister acknowledged, so an unchanged blur is a no-op.
+  const committed = useRef<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -37,6 +40,16 @@ export function NoteEditor({ entryId }: { entryId: string }) {
     };
   }, [entryId]);
 
+  // Both timers outlive the component otherwise: navigating away within the
+  // debounce window left a pending commit setting state on an unmounted editor.
+  useEffect(
+    () => () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    },
+    [],
+  );
+
   function schedule(next: string) {
     setBody(next);
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -52,13 +65,21 @@ export function NoteEditor({ entryId }: { entryId: string }) {
   }
 
   async function commit(next: string) {
+    // Nothing to say to the canister if the text has not moved. `onBlur` fired
+    // a write on every blur, and a debounced commit racing a blur commit could
+    // land out of order and put the older text back.
+    if (next === committed.current) return;
+    committed.current = next;
     try {
       await setNote(entryId, next);
       setStatus("saved");
     } catch {
+      // The value did not land, so it is not what the canister holds.
+      committed.current = null;
       setStatus("failed");
     }
-    setTimeout(() => setStatus("idle"), 1800);
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => setStatus("idle"), 1800);
   }
 
   if (!open) {

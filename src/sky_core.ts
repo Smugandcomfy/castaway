@@ -145,14 +145,17 @@ export function separation(aDeg: number, bDeg: number): number {
 /// the pair is closing toward exact, the aspect is applying, otherwise it is
 /// separating. That is the ordinary astrological sense and it needs no extra
 /// theory — just the same computation twice.
+type AspectBody = { name: string; lonDeg: number; lonDegLater: number };
+
 export function aspectsAmong(
-  bodies: readonly { name: string; lonDeg: number; lonDegLater: number }[],
+  bodies: readonly AspectBody[],
 ): Aspect[] {
   const found: Aspect[] = [];
   for (let i = 0; i < bodies.length; i++) {
     for (let j = i + 1; j < bodies.length; j++) {
-      const a = bodies[i];
-      const b = bodies[j];
+      // Both indices are bounded by `bodies.length` two lines up.
+      const a = bodies[i] as AspectBody;
+      const b = bodies[j] as AspectBody;
       const now = separation(a.lonDeg, b.lonDeg);
       const later = separation(a.lonDegLater, b.lonDegLater);
       for (const kind of ASPECTS) {

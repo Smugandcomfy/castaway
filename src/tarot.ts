@@ -135,7 +135,7 @@ function mulberry32(seed: number) {
 export function newNonce(): number {
   const buf = new Uint32Array(1);
   crypto.getRandomValues(buf);
-  return buf[0];
+  return buf[0] as number; // the array was just allocated with one element
 }
 
 /// Partial Fisher-Yates: a real deal without replacement, so no card can
@@ -155,11 +155,11 @@ export function draw(
 
   for (let i = 0; i < 3; i++) {
     const j = i + Math.floor(rng() * (order.length - i));
-    [order[i], order[j]] = [order[j], order[i]];
+    [order[i], order[j]] = [order[j] as number, order[i] as number];
     picked.push({
-      card: DECK[order[i]],
+      card: DECK[order[i] as number] as Card,
       reversed: rng() < 0.5,
-      position: POSITIONS[i],
+      position: POSITIONS[i] as string,
     });
   }
 

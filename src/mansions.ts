@@ -83,7 +83,8 @@ export function mansionOf(elonDeg: number): number {
 
 /** The mansion record for a longitude. */
 export function mansionAt(elonDeg: number): Mansion {
-  return MANSIONS[mansionOf(elonDeg) - 1];
+  // `mansionOf` returns 1..28 and MANSIONS holds twenty-eight.
+  return MANSIONS[mansionOf(elonDeg) - 1] as Mansion;
 }
 
 const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV',

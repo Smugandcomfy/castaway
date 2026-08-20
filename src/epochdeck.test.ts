@@ -69,7 +69,7 @@ describe("the shuffle", () => {
 
   test("top card uniform across 7,800 epochs (expected 100/card, band 55-145)", () => {
     const counts = new Array(DECK_SIZE).fill(0);
-    for (let n = 0; n < 7800; n++) counts[deckOrder(testSeed(n))[0]]++;
+    for (let n = 0; n < 7800; n++) counts[deckOrder(testSeed(n))[0] as number]++;
     for (let c = 0; c < DECK_SIZE; c++) {
       expect(counts[c]).toBeGreaterThanOrEqual(55);
       expect(counts[c]).toBeLessThanOrEqual(145);
@@ -85,7 +85,7 @@ describe("the shuffle", () => {
       const seed = testSeed(n);
       const top = deckOrder(seed)[0];
       const rev = deckFlips(seed)[0];
-      if (top < 22) {
+      if ((top as number) < 22) {
         majTop++;
         if (rev) majTopRev++;
       } else {
@@ -134,7 +134,9 @@ describe("the walk", () => {
     let state: DeckState = { seed, cursor: 0, epoch: 1, shuffledAt: 0 };
     for (let d = 0; d < DRAWS_PER_EPOCH; d++) {
       const { drawn, next } = drawThree(state);
-      drawn.forEach((c, k) => expect(c.reversed).toBe(flips[state.cursor + k]));
+      drawn.forEach((c, k) =>
+        expect(c.reversed).toBe(flips[state.cursor + k] as boolean),
+      );
       state = next;
     }
   });

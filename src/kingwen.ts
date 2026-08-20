@@ -41,9 +41,10 @@ export const transform = (line: number): number =>
 export function hexagramNumberOf(lines: number[]): number {
   let index = 0;
   for (let i = 0; i < lines.length; i++) {
-    if (isYang(lines[i])) index += 1 << i;
+    if (isYang(lines[i] as number)) index += 1 << i;
   }
-  return KING_WEN[index];
+  // Six lines make a six-bit index, and the table has sixty-four entries.
+  return KING_WEN[index] as number;
 }
 
 /// The 64 hexagram names, indexed by King Wen number - 1.

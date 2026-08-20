@@ -145,7 +145,7 @@ const cardOf = (c: {
 /// missing value rather than a crash.
 const optOf = <A, B>(o: A | A[] | null | undefined, f: (a: A) => B): B | null => {
   if (o === null || o === undefined) return null;
-  if (Array.isArray(o)) return o.length > 0 ? f(o[0]) : null;
+  if (Array.isArray(o)) return o.length > 0 ? f(o[0] as A) : null;
   return f(o);
 };
 
@@ -238,6 +238,11 @@ async function fetchJournal(): Promise<Journal> {
 /// The journal, fetched once and then served from memory. `force` re-reads.
 export function loadJournal(force = false): Promise<Journal> {
   if (cache !== null && !force) return Promise.resolve(cache);
+  // A forced reload cannot ride an in-flight request that was issued before
+  // whatever it is meant to observe. `clearAll` forces one straight after the
+  // wipe; handing back a pre-wipe promise re-caches the deleted journal and
+  // the entries reappear on the next navigation.
+  if (force) inflight = null;
   if (inflight === null) {
     inflight = fetchJournal().finally(() => {
       inflight = null;
@@ -387,25 +392,21 @@ export type ConsultResult =
 /// Asks the coins. The one call that awaits brokered randomness, hence its
 /// longer timeout.
 ///
-/// The canister returns `{#ok : Reading; #err : Text}`, but a two-arm `ok`/`err`
-/// variant is the one shape the kernel refuses to hand over intact: it returns
-/// the `ok` payload **bare** and **throws** the `err` payload
-/// (apps/kernel/src/self_calls.ts:1609-1621). Every other variant arrives as a
-/// single-key object, which is why this one is easy to get wrong.
-///
-/// So the variant is reassembled here. Without it `"err" in result` is false
-/// for a perfectly good reading, `result.ok` is `undefined`, and the cast that
-/// the canister just recorded in the journal reports itself as a failure --
-/// which is exactly what the oracle page was doing.
+/// The canister's variant is `{#reading; #refused}` rather than `{#ok; #err}`,
+/// and that naming is load-bearing: an `ok`/`err` pair is unwrapped by the
+/// kernel, which returns `ok` bare and *throws* `err`
+/// (apps/kernel/src/self_calls.ts:1609-1621). The SDK then wraps the thrown
+/// value in an `Error`, so a refusal became indistinguishable from a dead
+/// canister and every deliberate answer -- "Ask a question first.", "The
+/// oracle is out of cycles." -- surfaced as a transport failure. Under these
+/// names the variant arrives as an ordinary single-key object and the reason
+/// survives.
 export async function consultOracle(question: string): Promise<ConsultResult> {
-  try {
-    return { ok: await call<unknown>("consult", question) };
-  } catch (e) {
-    // A domain error is the projected `Text`, thrown as a bare string. A
-    // transport or decode failure is an Error. Only the string is ours.
-    if (typeof e === "string") return { err: e };
-    throw e;
+  const result = await call<Record<string, unknown>>("consult", question);
+  if (result !== null && typeof result === "object" && "refused" in result) {
+    return { err: String(result.refused) };
   }
+  return { ok: (result as { reading?: unknown }).reading };
 }
 
 /// Every reading, newest first.

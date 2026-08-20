@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Home from "./Home";
 import { loadJournal, setEntered, setTheme } from "./backend";
 import { ThemeContext } from "./Masthead";
 import {
   applyTheme,
   nextTheme,
-  resolveTheme,
   systemTheme,
   watchSystemTheme,
   type Theme,
@@ -147,34 +146,51 @@ export default function App() {
         const next = nextTheme(themeChoice);
         setThemeChoice(next);
         setResolvedTheme(applyTheme(next));
-        void setTheme(next);
+        void setTheme(next).catch(() => undefined);
       },
     }),
     [theme, themeChoice],
   );
 
   // Reflect view in the URL so pages are shareable and the back button works.
+  //
+  // `pushState`, not `replaceState`. Replacing never adds a history entry, so
+  // home -> oracle -> tarot -> journal left the stack empty and Back walked
+  // straight out of the app -- while two comments here claimed the opposite.
+  // The very first run still replaces, because normalising the URL the reader
+  // arrived on is not a navigation they should have to press Back through.
+  const navigated = useRef(false);
   useEffect(() => {
     document.title = TITLE[view];
     const desired = VIEW_TO_HASH[view];
     // Preserve #/reading/... deep links on history — don't rewrite them.
     if (view === "history" && window.location.hash.startsWith("#/reading/")) {
+      navigated.current = true;
       return;
     }
     if (window.location.hash !== desired) {
       const url = desired || window.location.pathname + window.location.search;
-      window.history.replaceState(null, "", url);
+      if (navigated.current) window.history.pushState(null, "", url);
+      else window.history.replaceState(null, "", url);
     }
+    navigated.current = true;
   }, [view]);
 
-  // Browser back / forward — re-sync from hash.
+  // Browser back / forward — re-sync from hash. `popstate` as well as
+  // `hashchange`, because a pushState that only changes the path fires the
+  // former and not the latter.
   useEffect(() => {
-    const onHash = () => {
-      const v = parseHash(window.location.hash);
-      if (v) setView(v);
+    const resync = () => {
+      // An unrecognised hash used to leave the reader on the previous page with
+      // the bad URL still in the bar, and nothing to correct it.
+      setView(parseHash(window.location.hash) ?? "home");
     };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("hashchange", resync);
+    window.addEventListener("popstate", resync);
+    return () => {
+      window.removeEventListener("hashchange", resync);
+      window.removeEventListener("popstate", resync);
+    };
   }, []);
 
   function enter() {

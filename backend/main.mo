@@ -99,7 +99,17 @@ module {
   };
 
   /// Declared structurally for the same reason as the rest.
-  public type ConsultResult = { #ok : Reading; #err : Text };
+  ///
+  /// The arms are deliberately NOT named `ok`/`err`. A two-arm variant with
+  /// those exact names is the one shape the kernel refuses to hand over intact:
+  /// it returns the `ok` payload bare and *throws* the `err` payload
+  /// (apps/kernel/src/self_calls.ts:1609-1621). The throw is then wrapped by
+  /// the SDK into an `Error` (neutron-tools protocol `toError`), so by the time
+  /// it reaches the tile there is nothing left to tell a refusal apart from a
+  /// dead canister -- and every deliberate answer below would be reported as a
+  /// transport failure. Under any other pair of names the variant arrives as an
+  /// ordinary single-key object and the refusal survives with its reason.
+  public type ConsultResult = { #reading : Reading; #refused : Text };
 
   public type AppBackendEnvironment = {
     stable_memory : { cast_away : Memory.Mem };
@@ -168,10 +178,10 @@ module {
     public func /*update*/ consult(question : Text) : async* ConsultResult {
       let trimmed = Text.trim(question, #predicate blank);
       if (Text.size(trimmed) == 0) {
-        return #err("Ask a question first.");
+        return #refused("Ask a question first.");
       };
       if (Text.encodeUtf8(trimmed).size() > MAX_QUESTION_BYTES) {
-        return #err("Keep the question under 500 characters.");
+        return #refused("Keep the question under 500 characters.");
       };
 
       switch (await* entropy.fresh_bytes()) {
@@ -180,12 +190,12 @@ module {
           mem.nextId += 1;
           mem.readings := Memory.append<Reading>(mem.readings, result, MAX_HISTORY);
           mem.flags := { mem.flags with hasCast = true };
-          #ok(result);
+          #reading(result);
         };
-        case (#err(#busy)) #err("The coins are busy. Try again in a moment.");
-        case (#err(#low_cycles)) #err("The oracle is out of cycles.");
-        case (#err(#management_failure)) #err("Consensus randomness request failed.");
-        case (#err(#source_gone)) #err("The randomness capability is no longer available.");
+        case (#err(#busy)) #refused("The coins are busy. Try again in a moment.");
+        case (#err(#low_cycles)) #refused("The oracle is out of cycles.");
+        case (#err(#management_failure)) #refused("Consensus randomness request failed.");
+        case (#err(#source_gone)) #refused("The randomness capability is no longer available.");
       };
     };
 

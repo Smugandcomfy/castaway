@@ -67,14 +67,23 @@ function withRings(
 ): (ChartBody & { radius: number })[] {
   const sorted = [...bodies].sort((a, b) => a.lonDeg - b.lonDeg);
   const out: (ChartBody & { radius: number })[] = [];
+  // Far enough in that the innermost ring still clears the Earth's disc. Seven
+  // bodies in one sign is rare but not impossible, and an unbounded ring count
+  // used to put the sixth at radius 30 — inside R_HUB, on top of the label.
+  const maxRing = Math.max(0, Math.floor((R_BODY - R_HUB - 24) / 24));
   let ring = 0;
   for (let i = 0; i < sorted.length; i++) {
-    const prev = sorted[i - 1];
-    if (prev) {
-      const gap = sorted[i].lonDeg - prev.lonDeg;
-      ring = gap < minGap ? ring + 1 : 0;
+    const here = sorted[i] as ChartBody;
+    // The wheel wraps, so the neighbour of the first body is the last one.
+    // Comparing raw longitudes made a pair at 359° and 1° look 358° apart and
+    // left them drawn on top of each other.
+    const prev = i === 0 ? sorted[sorted.length - 1] : sorted[i - 1];
+    if (prev !== undefined && sorted.length > 1) {
+      const gap =
+        i === 0 ? here.lonDeg + 360 - prev.lonDeg : here.lonDeg - prev.lonDeg;
+      ring = gap < minGap ? Math.min(ring + 1, maxRing) : 0;
     }
-    out.push({ ...sorted[i], radius: R_BODY - ring * 24 });
+    out.push({ ...here, radius: R_BODY - ring * 24 });
   }
   return out;
 }

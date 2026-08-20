@@ -46,7 +46,7 @@
     .sf-ask {
       display: flex;
       flex-direction: column;
-      gap: var(--nt-gap-sm);
+      gap: var(--nt-gap-2); // 8px — --nt-gap-sm is not a token
     }
 
     // ---------------------------------------------------------- the hexagram
@@ -177,7 +177,7 @@
     .sf-past-row {
       display: flex;
       align-items: center;
-      gap: var(--nt-gap-md);
+      gap: var(--nt-gap-4); // 16px — --nt-gap-md is not a token
     }
 
     .sf-past-body {
@@ -371,7 +371,7 @@
     .sf-ask {
       display: flex;
       flex-direction: column;
-      gap: var(--nt-gap-md, 16px);
+      gap: var(--nt-gap-4);
       align-items: stretch;
     }
 
@@ -689,7 +689,14 @@
     // Small ghost buttons under the reading and the sigil: transform, copy,
     // save. Grouped and centered so they read as tools, not headline actions.
 
-    .ca-reading-actions {
+    .ca-save-note {
+  margin: var(--nt-gap-2) 0 0;
+  font-size: 0.85rem;
+  color: var(--nt-text-muted, currentColor);
+  opacity: 0.85;
+}
+
+.ca-reading-actions {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
@@ -1638,8 +1645,7 @@
   // focus rings render in the wrong mode. That was a live bug on every light
   // surface in the app.
 
-  :root[data-ca-theme="light"] .nt-app.cast-away,
-  .nt-app.cast-away.ca-paper {
+  :root[data-ca-theme="light"] .nt-app.cast-away {
     color-scheme: light;
 
     // Surfaces. Darkened from the first pass so muted body text clears
@@ -1753,16 +1759,13 @@
 
   // Design-system primary-button hover is a hardcoded mint (#9aebba); wrong
   // on paper. A deeper bronze so hover reads as intentional here.
-  :root[data-ca-theme="light"] .cast-away .nt-button:not(:disabled):hover,
-  .ca-paper .nt-button:not(:disabled):hover {
+  :root[data-ca-theme="light"] .cast-away .nt-button:not(:disabled):hover {
     background: #9c661f;
   }
 
   // Placeholder colour on paper (the design system's is very faint on light).
   :root[data-ca-theme="light"] .cast-away .nt-input::placeholder,
-  :root[data-ca-theme="light"] .cast-away .nt-textarea::placeholder,
-  .ca-paper .nt-input::placeholder,
-  .ca-paper .nt-textarea::placeholder {
+  :root[data-ca-theme="light"] .cast-away .nt-textarea::placeholder {
     color: #8a7f68;
   }
 
@@ -2017,39 +2020,44 @@
     color: var(--nt-bg);
   }
 
-  // -- planet colors on the paper theme --------------------------------
+  // -- planet colors in light theme ------------------------------------
   //
   // Overrides the orrery's default gold. Traditional planetary hues,
   // saturated enough to read against paper cream.
+  //
+  // These were written against `.ca-paper`, the state class the theme used to
+  // be. Nothing has emitted that class since the theme became a real choice on
+  // `data-ca-theme`, so the whole block was unreachable and every planet drew
+  // in the same gold in light mode.
 
-  .ca-paper .orrery {
+  :root[data-ca-theme="light"] .orrery {
     --orrery-gold: #b47a2e;
     --orrery-bone: #2a4f8a;   // Earth (bone slot)
     --orrery-dim:  #6a5f4a;
     --orrery-line: #b8a97e;
   }
 
-  .ca-paper .orrery-sun-core  { fill: #d4a53a; }
-  .ca-paper .orrery-sun-halo1 { fill: #d4a53a; opacity: 0.22; }
-  .ca-paper .orrery-sun-halo2 { fill: #d4a53a; opacity: 0.10; }
+  :root[data-ca-theme="light"] .orrery-sun-core  { fill: #d4a53a; }
+  :root[data-ca-theme="light"] .orrery-sun-halo1 { fill: #d4a53a; opacity: 0.22; }
+  :root[data-ca-theme="light"] .orrery-sun-halo2 { fill: #d4a53a; opacity: 0.10; }
 
-  .ca-paper .orrery-planet--mercury .orrery-dot { fill: #7d7a72; }
-  .ca-paper .orrery-planet--venus   .orrery-dot { fill: #c88f4a; }
-  .ca-paper .orrery-planet--earth   .orrery-dot { fill: #2a4f8a; }
-  .ca-paper .orrery-planet--mars    .orrery-dot { fill: #b53f2a; }
-  .ca-paper .orrery-planet--jupiter .orrery-dot { fill: #c68638; }
-  .ca-paper .orrery-planet--saturn  .orrery-dot { fill: #a58a3a; }
-  .ca-paper .orrery-planet--uranus  .orrery-dot { fill: #4a9dad; }
-  .ca-paper .orrery-planet--neptune .orrery-dot { fill: #26478a; }
-  .ca-paper .orrery-planet--pluto   .orrery-dot--hollow {
+  :root[data-ca-theme="light"] .orrery-planet--mercury .orrery-dot { fill: #7d7a72; }
+  :root[data-ca-theme="light"] .orrery-planet--venus   .orrery-dot { fill: #c88f4a; }
+  :root[data-ca-theme="light"] .orrery-planet--earth   .orrery-dot { fill: #2a4f8a; }
+  :root[data-ca-theme="light"] .orrery-planet--mars    .orrery-dot { fill: #b53f2a; }
+  :root[data-ca-theme="light"] .orrery-planet--jupiter .orrery-dot { fill: #c68638; }
+  :root[data-ca-theme="light"] .orrery-planet--saturn  .orrery-dot { fill: #a58a3a; }
+  :root[data-ca-theme="light"] .orrery-planet--uranus  .orrery-dot { fill: #4a9dad; }
+  :root[data-ca-theme="light"] .orrery-planet--neptune .orrery-dot { fill: #26478a; }
+  :root[data-ca-theme="light"] .orrery-planet--pluto   .orrery-dot--hollow {
     stroke: #7a5d90;
   }
-  .ca-paper .orrery-saturn-ring { stroke: #a58a3a; }
+  :root[data-ca-theme="light"] .orrery-saturn-ring { stroke: #a58a3a; }
 
   // Zodiac ring is muted on paper.
-  .ca-paper .orrery-ring line { stroke: #b8a97e; }
-  .ca-paper .orrery-ring text { fill: #6a5f4a; opacity: 0.75; }
-  .ca-paper .orrery-ring .orrery-fiducial { fill: #b47a2e; }
+  :root[data-ca-theme="light"] .orrery-ring line { stroke: #b8a97e; }
+  :root[data-ca-theme="light"] .orrery-ring text { fill: #6a5f4a; opacity: 0.75; }
+  :root[data-ca-theme="light"] .orrery-ring .orrery-fiducial { fill: #b47a2e; }
 
   // ============================================================ RESPONSIVE
   //
@@ -2324,6 +2332,15 @@
     0%, 60% { outline-color: var(--nt-accent); }
     100%    { outline-color: transparent; }
   }
+
+/// The deep-link target from #/reading/<id>. The class was applied and the
+/// keyframes above were written for it, but no rule ever connected the two, so
+/// following a shared link landed on the entry with nothing to show which one
+/// it was.
+.ca-journal-item.is-highlighted {
+  animation: ca-highlight-fade 2.4s ease-out 1;
+}
+
 
   // ============================================================ PRINT
   //

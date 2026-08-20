@@ -14,7 +14,6 @@ import {
   clearAll,
   loadReadings,
   deleteEntry,
-  journalCache,
   loadJournal,
   type Draw,
   type SavedCard,
@@ -68,19 +67,28 @@ const formatWhen = (ms: number) =>
   });
 
 /// Rebuild a full DrawnCard from a SavedCard by looking up the deck.
-function hydrate(saved: SavedCard[]): DrawnCard[] {
-  return saved.map((s) => ({
-    card: DECK[s.cardIndex],
-    reversed: s.reversed,
-    position: s.position,
-  }));
+///
+/// `cardIndex` is a `Nat` off the wire. The canister bounds it now, but an
+/// entry written before it did can still hold anything, and an out-of-range
+/// index used to yield `undefined` here, which `TarotCard` then dereferenced --
+/// taking the whole Journal page down to the error boundary over one bad row.
+/// A card that cannot be identified is dropped instead.
+function hydrate(saved: SavedCard[] | undefined): DrawnCard[] {
+  if (!saved) return [];
+  const out: DrawnCard[] = [];
+  for (const s of saved) {
+    const card = DECK[s.cardIndex];
+    if (card === undefined) continue;
+    out.push({ card, reversed: s.reversed, position: s.position });
+  }
+  return out;
 }
 
 /// Reads #/reading/<id> from the URL for deep-linking into a specific entry.
 function readingIdFromHash(): string {
   if (typeof window === "undefined") return "";
   const m = window.location.hash.match(/^#\/reading\/(\d+)$/);
-  return m ? m[1] : "";
+  return m?.[1] ?? "";
 }
 
 export default function History({ goTo }: { goTo: (v: View) => void }) {
@@ -90,6 +98,7 @@ export default function History({ goTo }: { goTo: (v: View) => void }) {
   const [seals, setSeals] = useState<Seal[]>([]);
   const [confirmingClear, setConfirmingClear] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<ReadonlySet<string>>(new Set());
   const [expandedTarot, setExpandedTarot] = useState<Set<string>>(new Set());
   const [highlightId] = useState<string>(readingIdFromHash);
 
@@ -186,6 +195,9 @@ export default function History({ goTo }: { goTo: (v: View) => void }) {
   }
 
   async function removeLocal(id: string) {
+    // Two clicks used to send two `delete_entry` calls for the same row.
+    if (deleting.has(id)) return;
+    setDeleting((s) => new Set(s).add(id));
     try {
       await deleteEntry(id);
     } catch (e) {
@@ -193,6 +205,12 @@ export default function History({ goTo }: { goTo: (v: View) => void }) {
       // here left the entry on screen and the button looking inert.
       setError(`Could not delete that entry. Try again.${reason(e)}`);
       return;
+    } finally {
+      setDeleting((s) => {
+        const next = new Set(s);
+        next.delete(id);
+        return next;
+      });
     }
     setTarotEntries((s) => s.filter((e) => e.id !== id));
     setSigilEntries((s) => s.filter((e) => e.id !== id));

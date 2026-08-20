@@ -146,8 +146,9 @@ describe("aspects", () => {
         { name: "B", lonDeg: 10 + kind.angle, lonDegLater: 10 + kind.angle },
       ]);
       expect(found.length).toBe(1);
-      expect(found[0].kind).toBe(kind.name);
-      expect(found[0].orb).toBeCloseTo(0, 9);
+      const hit = found[0] as (typeof found)[number];
+      expect(hit.kind).toBe(kind.name);
+      expect(hit.orb).toBeCloseTo(0, 9);
     }
   });
 
@@ -168,14 +169,14 @@ describe("aspects", () => {
       { name: "A", lonDeg: 0, lonDegLater: 0 },
       { name: "B", lonDeg: 123, lonDegLater: 121 },
     ]);
-    expect(applying[0].kind).toBe("trine");
-    expect(applying[0].applying).toBe(true);
+    expect(applying[0]?.kind).toBe("trine");
+    expect(applying[0]?.applying).toBe(true);
 
     const separating = aspectsAmong([
       { name: "A", lonDeg: 0, lonDegLater: 0 },
       { name: "B", lonDeg: 123, lonDegLater: 125 },
     ]);
-    expect(separating[0].applying).toBe(false);
+    expect(separating[0]?.applying).toBe(false);
   });
 
   test("a pair gets at most one aspect", () => {

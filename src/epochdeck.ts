@@ -88,7 +88,9 @@ function sfc32(a: number, b: number, c: number, d: number): () => number {
 /// other because their derivations differ at the tag.
 function domainRng(seed: SeedHex, domain: "order" | "flip"): () => number {
   const w = [0, 1, 2, 3].map((i) => fnv1a(`${seed}|${domain}|${i}`));
-  const rng = sfc32(w[0], w[1], w[2], w[3]);
+  // `w` is mapped from a four-element literal directly above.
+  const [w0, w1, w2, w3] = w as [number, number, number, number];
+  const rng = sfc32(w0, w1, w2, w3);
   for (let i = 0; i < 12; i++) rng(); // standard sfc32 warm-up
   return rng;
 }
@@ -102,7 +104,7 @@ export function deckOrder(seed: SeedHex): number[] {
   const order = Array.from({ length: DECK_SIZE }, (_, i) => i);
   for (let i = DECK_SIZE - 1; i >= 1; i--) {
     const j = Math.floor(rng() * (i + 1)); // uniform in [0, i]
-    [order[i], order[j]] = [order[j], order[i]];
+    [order[i], order[j]] = [order[j] as number, order[i] as number];
   }
   return order;
 }
@@ -158,9 +160,10 @@ export function drawThree(
   for (let k = 0; k < DRAW_SIZE; k++) {
     const slot = state.cursor + k;
     drawn.push({
-      index: order[slot],
-      reversed: flips[slot],
-      position: positions[k],
+      // `canDraw` guarantees the cursor leaves DRAW_SIZE cards in the deck.
+      index: order[slot] as number,
+      reversed: flips[slot] as boolean,
+      position: positions[k] as string,
     });
   }
   return { drawn, next: { ...state, cursor: state.cursor + DRAW_SIZE } };

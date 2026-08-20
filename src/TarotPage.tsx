@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TarotCard } from "./TarotCard";
 import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
-import { DECK, type DrawnCard } from "./tarot";
+import { DECK, type Card, type DrawnCard } from "./tarot";
 import {
   DECK_SIZE,
   DRAW_SIZE,
@@ -87,8 +87,9 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
       // rather than from fresh entropy: nothing after the shuffle is random.
       const movingLines = (deck.cursor / DRAW_SIZE) % 7;
 
+      // `drawn` walks a permutation of 0..77, so every index names a card.
       const cards: DrawnCard[] = drawn.map((d) => ({
-        card: DECK[d.index],
+        card: DECK[d.index] as Card,
         reversed: d.reversed,
         position: d.position,
       }));
@@ -113,7 +114,13 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
         })),
       });
     } catch (e) {
-      setError(`Could not reach the deck. Try again.${reason(e)}`);
+      // By the time anything can throw here the cursor has already advanced on
+      // the canister and the cards are on screen, so "could not reach the deck"
+      // was provably false — `advance_deck` had just succeeded. What failed is
+      // the journal write, and the three cards are spent either way.
+      setError(
+        `The cards were drawn, but the draw could not be written to your journal.${reason(e)}`,
+      );
     } finally {
       setBusy(false);
     }

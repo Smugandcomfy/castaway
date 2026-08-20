@@ -39,19 +39,19 @@ describe("T3 · magic squares", () => {
 
       // Every row, every column, both diagonals sum to the constant.
       for (let r = 0; r < n; r++) {
-        const rowSum = k.grid[r].reduce((a, b) => a + b, 0);
+        const rowSum = (k.grid[r] as number[]).reduce((a, b) => a + b, 0);
         expect(rowSum).toBe(expected);
       }
       for (let c = 0; c < n; c++) {
         let colSum = 0;
-        for (let r = 0; r < n; r++) colSum += k.grid[r][c];
+        for (let r = 0; r < n; r++) colSum += (k.grid[r] as number[])[c] as number;
         expect(colSum).toBe(expected);
       }
       let d1 = 0;
       let d2 = 0;
       for (let i = 0; i < n; i++) {
-        d1 += k.grid[i][i];
-        d2 += k.grid[i][n - 1 - i];
+        d1 += (k.grid[i] as number[])[i] as number;
+        d2 += (k.grid[i] as number[])[n - 1 - i] as number;
       }
       expect(d1).toBe(expected);
       expect(d2).toBe(expected);
@@ -118,13 +118,13 @@ describe("T2 · election distribution", () => {
         const bits = (seq >> (line * 3)) & 0b111;
         if (bits === 0b000 || bits === 0b111) moving += 1;
       }
-      counts[moving] += 1;
+      counts[moving] = (counts[moving] ?? 0) + 1;
     }
     expect(counts).toEqual([...ELECTION_COUNTS_8POW6]);
     // And the closed form: C(6,k) * 2^k * 6^(6-k)
     const choose = [1, 6, 15, 20, 15, 6, 1];
     for (let k = 0; k <= 6; k++) {
-      const closed = choose[k] * 2 ** k * 6 ** (6 - k);
+      const closed = (choose[k] as number) * 2 ** k * 6 ** (6 - k);
       expect(counts[k]).toBe(closed);
     }
     // Sums to 8^6.
@@ -264,7 +264,7 @@ describe("T7 · cards contribute cells", () => {
       const down = traceWithCards("", order, other).values;
       expect(up.length).toBe(1);
       expect(down.length).toBe(1);
-      expect(down[0]).toBe(max + 1 - up[0]);
+      expect(down[0]).toBe(max + 1 - (up[0] as number));
     }
   });
 
@@ -345,7 +345,7 @@ describe("T8 · the sky and the cast elect the square together", () => {
     }
     // And it starts on the ruler of the Moon's sign.
     for (let sign = 0; sign < 12; sign++) {
-      expect(electedOrder(0, sign) - 3).toBe(SIGN_RULER[sign]);
+      expect(electedOrder(0, sign) - 3).toBe(SIGN_RULER[sign] as number);
     }
   });
 

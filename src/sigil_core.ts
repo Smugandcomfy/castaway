@@ -36,16 +36,27 @@ export const PLANETS: Record<number, string> = {
   9: "Luna",
 };
 
+/// Grid access, with the invariant stated once.
+///
+/// Every square in this file is built `n × n` and every index into it comes
+/// from a loop bounded by the same `n`, so the cell always exists.
+/// `noUncheckedIndexedAccess` cannot see that, and scattering `!` through the
+/// arithmetic would bury the one place it might genuinely matter. These two say
+/// it deliberately instead.
+const row = (g: number[][], r: number): number[] => g[r] as number[];
+const cell = (g: number[][], r: number, c: number): number =>
+  (g[r] as number[])[c] as number;
+
 /// De la Loubère's Siamese method.
 function oddSquare(n: number): number[][] {
   const g = Array.from({ length: n }, () => new Array(n).fill(0));
   let r = 0;
   let c = (n - 1) / 2;
   for (let k = 1; k <= n * n; k++) {
-    g[r][c] = k;
+    row(g, r)[c] = k;
     const nr = (r - 1 + n) % n;
     const nc = (c + 1) % n;
-    if (g[nr][nc]) r = (r + 1) % n;
+    if (cell(g, nr, nc)) r = (r + 1) % n;
     else {
       r = nr;
       c = nc;
@@ -64,7 +75,7 @@ function doublyEvenSquare(n: number): number[][] {
     for (let c = 0; c < n; c++) {
       const rEdge = r % 4 === 0 || r % 4 === 3;
       const cEdge = c % 4 === 0 || c % 4 === 3;
-      if (rEdge === cEdge) g[r][c] = n * n + 1 - g[r][c];
+      if (rEdge === cEdge) row(g, r)[c] = n * n + 1 - cell(g, r, c);
     }
   }
   return g;
@@ -78,11 +89,11 @@ function singlyEvenSquare(n: number): number[][] {
 
   for (let r = 0; r < h; r++) {
     for (let c = 0; c < h; c++) {
-      const v = sub[r][c];
-      g[r][c] = 4 * v - 3;
-      g[r][c + h] = 4 * v - 1;
-      g[r + h][c] = 4 * v;
-      g[r + h][c + h] = 4 * v - 2;
+      const v = cell(sub, r, c);
+      row(g, r)[c] = 4 * v - 3;
+      row(g, r)[c + h] = 4 * v - 1;
+      row(g, r + h)[c] = 4 * v;
+      row(g, r + h)[c + h] = 4 * v - 2;
     }
   }
 
@@ -93,9 +104,9 @@ function singlyEvenSquare(n: number): number[][] {
     for (let c = start; c < start + k; c++) cols.push(c);
     for (let c = n - k + 1; c < n; c++) cols.push(c);
     for (const c of cols) {
-      const t = g[r][c];
-      g[r][c] = g[r + h][c];
-      g[r + h][c] = t;
+      const t = cell(g, r, c);
+      row(g, r)[c] = cell(g, r + h, c);
+      row(g, r + h)[c] = t;
     }
   }
   return g;
@@ -236,7 +247,8 @@ export function electedOrder(
       `electedOrder: moonSignIndex must be an integer 0-11, got ${moonSignIndex}`,
     );
   }
-  return ((SIGN_RULER[moonSignIndex] + movingLines) % 7) + 3;
+  // Validated as an integer 0-11 immediately above, and SIGN_RULER has twelve.
+  return (((SIGN_RULER[moonSignIndex] as number) + movingLines) % 7) + 3;
 }
 
 export function castKamea(movingLines: number, moonSignIndex: number): Kamea {
@@ -290,7 +302,7 @@ export function trace(phrase: string, order: number): SigilPath {
   // Where each number sits on the grid.
   const at = new Map<number, [number, number]>();
   for (let r = 0; r < order; r++) {
-    for (let c = 0; c < order; c++) at.set(k.grid[r][c], [c, r]);
+    for (let c = 0; c < order; c++) at.set(cell(k.grid, r, c), [c, r]);
   }
 
   const points = values.map((v) => at.get(v)!).filter(Boolean);
@@ -344,7 +356,7 @@ export function traceWithCards(
 
   const at = new Map<number, [number, number]>();
   for (let r = 0; r < order; r++) {
-    for (let c = 0; c < order; c++) at.set(base.kamea.grid[r][c], [c, r]);
+    for (let c = 0; c < order; c++) at.set(cell(base.kamea.grid, r, c), [c, r]);
   }
 
   const points = values.map((v) => at.get(v)!).filter(Boolean);

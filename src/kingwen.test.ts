@@ -16,8 +16,8 @@ function motokoNames(): [string, string][] {
   const start = mo.indexOf("let NAMES");
   const block = mo.slice(start, mo.indexOf("];", start));
   return [...block.matchAll(/\("([^"]+)",\s*"([^"]+)"\)/g)].map((m) => [
-    m[1],
-    m[2],
+    m[1] as string,
+    m[2] as string,
   ]);
 }
 
@@ -31,8 +31,9 @@ describe("the hexagram table", () => {
     const mo = motokoNames();
     expect(mo.length).toBe(64);
     HEXAGRAMS.forEach((h, i) => {
-      expect(h.pinyin).toBe(mo[i][0]);
-      expect(h.english).toBe(mo[i][1]);
+      const pair = mo[i] as [string, string];
+      expect(h.pinyin).toBe(pair[0]);
+      expect(h.english).toBe(pair[1]);
     });
   });
 

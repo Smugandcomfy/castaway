@@ -16,6 +16,7 @@ export function reason(e: unknown): string {
   const trimmed = message.trim();
   if (trimmed === "") return "";
   // Long canister rejections carry a stack-like tail that helps nobody.
-  const head = trimmed.split("\n")[0];
+  // `split` on a non-empty string always yields at least one element.
+  const head = trimmed.split("\n")[0] as string;
   return ` (${head.length > 160 ? `${head.slice(0, 157)}…` : head})`;
 }

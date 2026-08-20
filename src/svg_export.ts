@@ -51,17 +51,53 @@ export function serializeStandaloneSvg(node: SVGElement): string {
   return new XMLSerializer().serializeToString(clone);
 }
 
-/// Serialize and hand the file to the browser.
-export function downloadSvg(node: SVGElement, filename: string): void {
-  const blob = new Blob([serializeStandaloneSvg(node)], {
-    type: "image/svg+xml;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+/// What actually happened when the reader asked for the file.
+///
+/// `downloaded` is not a promise that a file landed. A tile is an iframe with
+/// `sandbox="allow-scripts"` and no `allow-downloads`, so a page-initiated
+/// download is refused with no event, no exception, and nothing to detect. All
+/// this can report is that the attempt was made without throwing.
+///
+/// `copied` is the half that can be confirmed, and it is why the clipboard is
+/// tried at all: inside a tile it is usually the only route that works, and a
+/// button that silently does nothing is worse than one that says what it did.
+export interface SaveOutcome {
+  downloaded: boolean;
+  copied: boolean;
+}
+
+/// Serialize, offer the file, and put the source on the clipboard as a fallback.
+export async function saveSvg(
+  node: SVGElement,
+  filename: string,
+): Promise<SaveOutcome> {
+  const text = serializeStandaloneSvg(node);
+
+  let downloaded = false;
+  try {
+    const blob = new Blob([text], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Revoking synchronously aborts the blob fetch before the download starts
+    // in several engines. Let it outlive the click.
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    downloaded = true;
+  } catch {
+    downloaded = false;
+  }
+
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(text);
+    copied = true;
+  } catch {
+    copied = false;
+  }
+
+  return { downloaded, copied };
 }

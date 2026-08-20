@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sigil } from "./Sigil";
 import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 import { saveSigil as saveSigilEntry } from "./backend";
-import { downloadSvg } from "./svg_export";
+import { saveSvg } from "./svg_export";
 import type { View } from "./App";
 import "./style.scss";
 
@@ -33,15 +33,16 @@ function autoElection(phrase: string): number {
   return h % 7;
 }
 
-function saveSigilSVG(phrase: string): void {
+async function saveSigilSVG(phrase: string): Promise<boolean> {
   const svg = document.querySelector<SVGElement>(".sf-sigil__art");
-  if (!svg) return;
+  if (!svg) return false;
   const slug = phrase
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40) || "sigil";
-  downloadSvg(svg, `cast-away-${slug}.svg`);
+  const { copied } = await saveSvg(svg, `cast-away-${slug}.svg`);
+  return copied;
 }
 
 export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
@@ -57,6 +58,12 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
   /// The live preview has no `madeAt` yet, so it is stamped with the moment
   /// the page was opened — the auspice you would be making under. Saving to
   /// the journal records its own `madeAt`, and that is what the entry shows.
+  const [saving, setSaving] = useState(false);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+  }, []);
+
   const openedAt = useMemo(() => new Date(), []);
 
   const trimmed = phrase.trim();
@@ -64,7 +71,10 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
   const movingLines = override ?? auto;
 
   async function toJournal() {
-    if (!trimmed) return;
+    // Without a guard, two clicks write two sigils: `save_sigil` mints a fresh
+    // id on every call, so the canister has no way to recognise the repeat.
+    if (!trimmed || saving) return;
+    setSaving(true);
     try {
       // The canister stamps the time, so there is nothing to pass and nothing
       // a caller could backdate.
@@ -76,8 +86,11 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
       setSaveState("saved");
     } catch {
       setSaveState("failed");
+    } finally {
+      setSaving(false);
     }
-    setTimeout(() => setSaveState("idle"), 2200);
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => setSaveState("idle"), 2200);
   }
 
   return (
@@ -155,7 +168,7 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
                 <button
                   type="button"
                   className="nt-button nt-button--ghost"
-                  onClick={() => saveSigilSVG(trimmed)}
+                  onClick={() => void saveSigilSVG(trimmed)}
                 >
                   Download SVG
                 </button>

@@ -58,12 +58,12 @@ function describe(lines: number[]) {
   lines.forEach((l, i) => {
     if (isYang(l)) index += 2 ** i;
   });
-  const number = KING_WEN[index];
+  const number = KING_WEN[index] as number; // six-bit index into a 64-entry table
   return {
     lines: lines.map(nat),
     number: nat(number),
-    pinyin: NAMES[number - 1][0],
-    english: NAMES[number - 1][1],
+    pinyin: (NAMES[number - 1] as string[])[0] as string,
+    english: (NAMES[number - 1] as string[])[1] as string,
     glyph: String.fromCodePoint(0x4dc0 + number - 1),
   };
 }
@@ -171,18 +171,22 @@ function dispatch(method: string, args: any[]) {
       await delay(method === "consult" ? 900 : 120);
       switch (method) {
         case "consult": {
-          // A two-arm ok/err variant is unwrapped by the kernel: the `ok`
-          // payload comes back bare and the `err` payload is *thrown*
-          // (apps/kernel/src/self_calls.ts:1609-1621). Mirroring that here is
-          // the whole point of this file -- returning `{ok: r}` is what let
-          // the real bug hide behind a green suite.
+          // `{#reading; #refused}`, not `{#ok; #err}` -- see the note on
+          // ConsultResult in backend/main.mo. An ordinary variant projects to a
+          // single-key object, which is what this returns.
+          //
+          // A previous version of this mock threw a bare string here to imitate
+          // the kernel's ok/err unwrapping. That was wrong twice over: the SDK
+          // wraps a thrown value in an Error before the app ever sees it, so no
+          // bare string can reach it -- and imitating a special case is exactly
+          // the kind of guesswork that made this file lie three times already.
           const q = String(tuple[0] ?? "").trim();
-          if (!q) throw "Ask a question first.";
-          if (q.length > 500) throw "Keep the question under 500 characters.";
+          if (!q) return { refused: "Ask a question first." };
+          if (q.length > 500) return { refused: "Keep the question under 500 characters." };
           const r = cast(q);
           history.push(r);
           flags = { ...flags, hasCast: true };
-          return r;
+          return { reading: r };
         }
         case "history":
           return [...history].reverse();

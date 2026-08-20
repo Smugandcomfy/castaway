@@ -34,8 +34,9 @@ const PATTERN_OF = new Map<number, number>(
 function trigramsOf(n: number): { lower: string; upper: string } {
   const pattern = PATTERN_OF.get(n) ?? 0;
   return {
-    lower: TRIGRAMS[pattern & 7],
-    upper: TRIGRAMS[(pattern >> 3) & 7],
+    // Both indices are masked to 0..7 and TRIGRAMS holds eight.
+    lower: TRIGRAMS[pattern & 7] as string,
+    upper: TRIGRAMS[(pattern >> 3) & 7] as string,
   };
 }
 

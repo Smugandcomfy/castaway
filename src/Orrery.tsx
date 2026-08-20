@@ -52,6 +52,14 @@ export interface OrreryProps {
   showZodiac?: boolean;
   /** 'panel' = interactive card; 'ambient' = dimmed, inert backdrop layer. */
   variant?: 'panel' | 'ambient';
+  /**
+   * Purely ornamental: no keyboard stops and no readout, but drawn exactly as
+   * a panel is. Set this when the orrery sits inside an `aria-hidden` wrapper —
+   * otherwise it hands a keyboard user nine tab-stops on elements screen
+   * readers are told do not exist. `variant="ambient"` also removes them, but
+   * dims the drawing to 45%, which is a visual decision rather than this one.
+   */
+  decorative?: boolean;
 }
 
 function utcStamp(d: Date): string {
@@ -65,6 +73,7 @@ export default function Orrery({
   showLabels = true,
   showZodiac = false,
   variant = 'panel',
+  decorative = false,
 }: OrreryProps) {
   const live = date === undefined;
   const [now, setNow] = useState<Date>(() => date ?? new Date());
@@ -131,6 +140,8 @@ export default function Orrery({
 
   const activeState = active ? states.find((s) => s.key === active) : undefined;
   const ambient = variant === 'ambient';
+  // Both hide the orrery from assistive tech; only `ambient` changes how it looks.
+  const inert = ambient || decorative;
   const ringR = OUTER_ZODIAC + 18;
 
   return (
@@ -199,7 +210,7 @@ export default function Orrery({
               className={`orrery-planet orrery-planet--${s.key}${
                 active === s.key ? ' is-active' : ''
               }`}
-              tabIndex={ambient ? -1 : 0}
+              tabIndex={inert ? -1 : 0}
               aria-label={`${s.label}, heliocentric longitude ${s.elonDeg.toFixed(1)} degrees, ${s.rAU.toFixed(2)} astronomical units from the Sun`}
               onMouseEnter={() => setActive(s.key)}
               onMouseLeave={() => setActive((k) => (k === s.key ? null : k))}
@@ -239,7 +250,7 @@ export default function Orrery({
         })}
       </svg>
 
-      {!ambient && (
+      {!inert && (
         <div className="orrery-readout">
           <span className="orrery-readout-body">
             {activeState

@@ -60,7 +60,7 @@ describe("T4 · agreement with Agrippa's printed table", () => {
     // The exact 90/7 boundaries have to reproduce that seven-cycle.
     const cycle = [0, 51, 42, 34, 25, 17, 8];
     MANSIONS.forEach((m, i) => {
-      expect(Math.floor(m.startDeg * 60) % 60).toBe(cycle[i % 7]);
+      expect(Math.floor(m.startDeg * 60) % 60).toBe(cycle[i % 7] as number);
     });
   });
 });

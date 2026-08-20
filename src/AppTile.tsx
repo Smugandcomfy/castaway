@@ -10,7 +10,7 @@ import type { View } from "./App";
 import { draw, newNonce, type DrawnCard } from "./tarot";
 import { saveTarotPull } from "./tarot_store";
 import { castSky, castSkyLine, moonSignIndex } from "./sky_core";
-import { downloadSvg } from "./svg_export";
+import { saveSvg } from "./svg_export";
 import { Rite, type Stage } from "./Rite";
 import { electedOrder } from "./sigil_core";
 import { reason } from "./reason";
@@ -39,6 +39,27 @@ interface HexagramData {
   pinyin: string;
   english: string;
   glyph: string;
+}
+
+/// Does this reply actually look like a reading?
+///
+/// `consultOracle` returns `unknown` because the wire cannot promise a shape.
+/// Casting it with `as` moved the failure to the first dereference -- inside
+/// `consult`'s own try -- where a decode problem was reported as "The cast did
+/// not complete", blaming the transport for a shape mismatch. Checking here
+/// means a bad reply says so.
+function isReading(v: unknown): v is Reading {
+  if (v === null || typeof v !== "object") return false;
+  const r = v as Record<string, unknown>;
+  return (
+    typeof r.question === "string" &&
+    typeof r.answer === "string" &&
+    typeof r.primary === "object" &&
+    r.primary !== null &&
+    Array.isArray(r.changingLines) &&
+    typeof r.tier === "object" &&
+    r.tier !== null
+  );
 }
 
 interface Reading {
@@ -143,7 +164,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
       });
       setSealed(entry);
       // The sigil is created below the fold; go and look at it.
-      setTimeout(() => reveal(sigilRef.current), 60);
+      timers.current.push(setTimeout(() => reveal(sigilRef.current), 60));
     } catch (e) {
       // Sealing is the one irreversible act on this page, so a failure has to
       // say so rather than leaving the button looking inert.
@@ -161,17 +182,32 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
     setPull([]);
     setPulls(0);
     setError(null);
-    setTimeout(() => document.getElementById("sf-question")?.focus(), 0);
+    timers.current.push(setTimeout(() => document.getElementById("sf-question")?.focus(), 0));
   }
 
   /// Downloads the current sigil as an SVG. Vector, tiny file, a real
   /// artifact of the exact question — and it carries its own colour tokens,
   /// without which it saves as a perfectly formed blank page.
-  function saveSigil() {
+  async function saveSigil() {
     const svg = document.querySelector<SVGElement>(".sf-sigil__art");
     if (!svg || !reading) return;
-    downloadSvg(svg, `cast-away-sigil-${String(reading.id)}.svg`);
+    const { downloaded, copied } = await saveSvg(
+      svg,
+      `cast-away-sigil-${String(reading.id)}.svg`,
+    );
+    // A tile cannot start a download, and cannot be told that it failed — so
+    // say what is actually known rather than leaving the button looking inert.
+    setSaveNote(
+      copied
+        ? downloaded
+          ? "Saved. If your browser blocked the download, the SVG is on your clipboard."
+          : "The SVG is on your clipboard."
+        : "The sigil could not be saved here. Try the Sigil page in a browser tab.",
+    );
+    timers.current.push(setTimeout(() => setSaveNote(null), 6000));
   }
+
+  const [saveNote, setSaveNote] = useState<string | null>(null);
 
   const [copied, setCopied] = useState(false);
 
@@ -187,7 +223,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
+      timers.current.push(setTimeout(() => setCopied(false), 1600));
     } catch {
       /* clipboard unavailable in the environment; no-op */
     }
@@ -199,7 +235,13 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
       .catch(() => {
         // Only decides whether the first-cast hint shows. Not worth a notice.
       });
-    return () => timers.current.forEach(clearTimeout);
+    return () => {
+      // Every timer on this page has to be in here. Three used to escape, so
+      // leaving the Oracle within 1.6s of "Copy reading" set state on an
+      // unmounted component and the reveal scrolled a page already left.
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+    };
   }, []);
 
   function animate(result: Reading) {
@@ -236,6 +278,8 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
       const result = await consultOracle(question);
       if ("err" in result) {
         setError(result.err);
+      } else if (!isReading(result.ok)) {
+        setError("The oracle answered, but not in a shape this app understands.");
       } else {
         setReading(result.ok);
         animate(result.ok);
@@ -277,7 +321,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
             with the hexagram reveal. */}
         {!reading && (
           <div className="ca-oracle-orrery" aria-hidden="true">
-            <Orrery size={260} showZodiac={false} showLabels={false} />
+            <Orrery size={260} decorative showZodiac={false} showLabels={false} />
           </div>
         )}
 
@@ -505,10 +549,15 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
                 <button
                   type="button"
                   className="nt-button nt-button--ghost"
-                  onClick={saveSigil}
+                  onClick={() => void saveSigil()}
                 >
                   Save the sigil
                 </button>
+                {saveNote && (
+                  <p className="ca-save-note" role="status">
+                    {saveNote}
+                  </p>
+                )}
               </div>
             </div>
           </section>

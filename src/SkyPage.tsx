@@ -62,7 +62,8 @@ const BODIES: readonly {
 const FLOOR = new Date(Date.UTC(1800, 0, 1, 0, 0, 0));
 
 function signName(elonDeg: number): string {
-  return SIGNS[Math.floor(norm360(elonDeg) / 30)];
+  // norm360 keeps this in 0..359, so the index is 0..11 and SIGNS holds twelve.
+  return SIGNS[Math.floor(norm360(elonDeg) / 30)] as string;
 }
 
 function degInSign(elonDeg: number): number {
@@ -137,7 +138,7 @@ export default function SkyPage({ goTo }: { goTo: (v: View) => void }) {
 
   function choosePlace(name: string) {
     setPlaceName(name);
-    void setPlace(name);
+    void setPlace(name).catch(() => undefined);
   }
 
   useEffect(() => {
@@ -228,7 +229,9 @@ export default function SkyPage({ goTo }: { goTo: (v: View) => void }) {
     label: p.label,
     lonDeg: p.lonDeg,
     retrograde: p.retrograde,
-    luminary: p.luminary,
+    // `exactOptionalPropertyTypes`: an optional field must be omitted, not set
+    // to undefined.
+    ...(p.luminary === undefined ? {} : { luminary: p.luminary }),
   }));
 
   function pickMoment(value: string) {

@@ -106,7 +106,7 @@ export function presidingCondition(
   const elonDeg = elonAt(body, castTimestamp);
   const idx = Math.floor(elonDeg / 30);
   const degInSign = Math.floor(elonDeg - idx * 30);
-  const sign = ZODIAC_NAMES[idx];
+  const sign = ZODIAC_NAMES[idx] as string; // idx is floor(elonDeg / 30), 0..11
 
   const before = elonAt(body, new Date(castTimestamp.getTime() - HALF_DAY_MS));
   const after = elonAt(body, new Date(castTimestamp.getTime() + HALF_DAY_MS));

@@ -174,6 +174,8 @@ function record(method: string, args: unknown[]): Promise<unknown> {
   sent.push({ method, args });
   const thrown = (globalThis as any).__wireThrow;
   if (thrown !== undefined) return Promise.reject(thrown);
+  const canned = (globalThis as any).__wireReply;
+  if (canned !== undefined) return Promise.resolve(canned);
   const out = schema!.methods[method]?.output;
   return Promise.resolve(out === undefined ? null : sample(out, fullReplies));
 }
@@ -275,36 +277,41 @@ describe.if(schema !== null)("no Nat or Int is ever sent as a number or a bigint
   }
 });
 
-describe("the ok/err variant is put back together", () => {
-  // The kernel unwraps a two-arm ok/err variant rather than projecting it as a
-  // single-key object: `ok` comes back bare, `err` is thrown. Every other
-  // variant is a single-key object, so this asymmetry is easy to miss -- and
-  // missing it made a successful cast report itself as a failure.
-  test("a resolved bare payload becomes { ok }", async () => {
-    const result = await backend.consultOracle("a question");
-    expect("ok" in result).toBe(true);
-    expect((result as { ok: unknown }).ok).toBeDefined();
+describe("a refusal survives as data, not as a thrown error", () => {
+  // The canister answers `{#reading; #refused}`. Those names are chosen so the
+  // kernel does NOT apply its ok/err special case, which returns `ok` bare and
+  // throws `err` — the SDK then wraps the throw in an Error, and a deliberate
+  // refusal becomes indistinguishable from a dead canister.
+  test("a reading arrives as { ok }", async () => {
+    (globalThis as any).__wireReply = { reading: { id: "1" } };
+    try {
+      const result = await backend.consultOracle("a question");
+      expect("ok" in result).toBe(true);
+      expect((result as { ok: any }).ok.id).toBe("1");
+    } finally {
+      delete (globalThis as any).__wireReply;
+    }
   });
 
-  test("a thrown string becomes { err }", async () => {
-    const original = (globalThis as any).__wireThrow;
-    (globalThis as any).__wireThrow = "Ask a question first.";
+  test("a refusal arrives as { err }, with its reason intact", async () => {
+    (globalThis as any).__wireReply = { refused: "Ask a question first." };
     try {
       const result = await backend.consultOracle("");
       expect("err" in result).toBe(true);
       expect((result as { err: string }).err).toBe("Ask a question first.");
     } finally {
-      (globalThis as any).__wireThrow = original;
+      delete (globalThis as any).__wireReply;
     }
   });
 
   test("a transport failure still rejects", async () => {
-    const original = (globalThis as any).__wireThrow;
+    // The SDK wraps every rejection in an Error (neutron-tools `toError`), so
+    // this is the only shape a real failure ever takes.
     (globalThis as any).__wireThrow = new Error("the canister is stopped");
     try {
       await expect(backend.consultOracle("q")).rejects.toThrow("the canister is stopped");
     } finally {
-      (globalThis as any).__wireThrow = original;
+      delete (globalThis as any).__wireThrow;
     }
   });
 });

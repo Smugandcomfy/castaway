@@ -92,7 +92,7 @@ export function Sigil({
   // The terminal bar sits square across the final leg, as it is drawn by hand.
   let bar = null;
   if (path.length > 1 && end) {
-    const [px, py] = path[path.length - 2];
+    const [px, py] = path[path.length - 2] as [number, number]; // guarded by length > 1
     const [ex, ey] = end;
     const dx = ex - px;
     const dy = ey - py;

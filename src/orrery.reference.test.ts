@@ -44,7 +44,7 @@ const BANDS: Record<string, [number, number]> = {
 describe("Standish cross-validation @ 2026-08-19", () => {
   test("all nine longitudes match the independent reference", () => {
     for (const s of allPlanetStates(D)) {
-      const e = EXPECT[s.key];
+      const e = EXPECT[s.key] as (typeof EXPECT)[keyof typeof EXPECT];
       const dE = angSep(s.elonDeg, e.elon);
       expect(dE).toBeLessThanOrEqual(e.tolE);
     }
@@ -52,7 +52,7 @@ describe("Standish cross-validation @ 2026-08-19", () => {
 
   test("all nine Sun distances match the reference", () => {
     for (const s of allPlanetStates(D)) {
-      const e = EXPECT[s.key];
+      const e = EXPECT[s.key] as (typeof EXPECT)[keyof typeof EXPECT];
       const dR = Math.abs(s.rAU - e.rAU);
       expect(dR).toBeLessThanOrEqual(e.tolR);
     }
@@ -80,7 +80,7 @@ describe("physical bands", () => {
       new Date("2028-12-31T00:00:00Z"),
     ]) {
       for (const s of allPlanetStates(date)) {
-        const [lo, hi] = BANDS[s.key];
+        const [lo, hi] = BANDS[s.key] as [number, number];
         expect(s.rAU).toBeGreaterThanOrEqual(lo);
         expect(s.rAU).toBeLessThanOrEqual(hi);
       }
@@ -102,7 +102,7 @@ describe("orbit sampling", () => {
     for (const spec of PLANETS) {
       const pts = orbitPathAU(spec, D, 32);
       expect(pts.length).toBe(32);
-      const [lo, hi] = BANDS[spec.key];
+      const [lo, hi] = BANDS[spec.key] as [number, number];
       for (const p of pts) {
         const r = Math.hypot(p.x, p.y);
         // hypot(x,y) <= true r (z dropped), so allow the low side a little.

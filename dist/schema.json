@@ -4,7 +4,7 @@
   "app": {
     "id": "cast_away",
     "name": "Cast Away",
-    "version": 108
+    "version": 109
   },
   "methods": {
     "consult": {
@@ -20,145 +20,170 @@
         "maxItems": 1
       },
       "output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "bigint as string"
-          },
-          "question": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string",
-            "description": "bigint as string"
-          },
-          "primary": {
+        "oneOf": [
+          {
             "type": "object",
             "properties": {
-              "lines": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "description": "bigint as string"
-                }
-              },
-              "number": {
-                "type": "string",
-                "description": "bigint as string"
-              },
-              "pinyin": {
-                "type": "string"
-              },
-              "english": {
-                "type": "string"
-              },
-              "glyph": {
+              "reading": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "bigint as string"
+                  },
+                  "question": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "bigint as string"
+                  },
+                  "primary": {
+                    "type": "object",
+                    "properties": {
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "description": "bigint as string"
+                        }
+                      },
+                      "number": {
+                        "type": "string",
+                        "description": "bigint as string"
+                      },
+                      "pinyin": {
+                        "type": "string"
+                      },
+                      "english": {
+                        "type": "string"
+                      },
+                      "glyph": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                      "lines",
+                      "number",
+                      "pinyin",
+                      "english",
+                      "glyph"
+                    ]
+                  },
+                  "relating": {
+                    "type": "object",
+                    "properties": {
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "description": "bigint as string"
+                        }
+                      },
+                      "number": {
+                        "type": "string",
+                        "description": "bigint as string"
+                      },
+                      "pinyin": {
+                        "type": "string"
+                      },
+                      "english": {
+                        "type": "string"
+                      },
+                      "glyph": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                      "lines",
+                      "number",
+                      "pinyin",
+                      "english",
+                      "glyph"
+                    ]
+                  },
+                  "changingLines": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "bigint as string"
+                    }
+                  },
+                  "tier": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "affirmative": {
+                            "type": "null"
+                          }
+                        },
+                        "required": [
+                          "affirmative"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "noncommittal": {
+                            "type": "null"
+                          }
+                        },
+                        "required": [
+                          "noncommittal"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "negative": {
+                            "type": "null"
+                          }
+                        },
+                        "required": [
+                          "negative"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "question",
+                  "timestamp",
+                  "primary",
+                  "changingLines",
+                  "tier",
+                  "answer"
+                ]
+              }
+            },
+            "required": [
+              "reading"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "refused": {
                 "type": "string"
               }
             },
-            "additionalProperties": false,
             "required": [
-              "lines",
-              "number",
-              "pinyin",
-              "english",
-              "glyph"
-            ]
-          },
-          "relating": {
-            "type": "object",
-            "properties": {
-              "lines": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "description": "bigint as string"
-                }
-              },
-              "number": {
-                "type": "string",
-                "description": "bigint as string"
-              },
-              "pinyin": {
-                "type": "string"
-              },
-              "english": {
-                "type": "string"
-              },
-              "glyph": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false,
-            "required": [
-              "lines",
-              "number",
-              "pinyin",
-              "english",
-              "glyph"
-            ]
-          },
-          "changingLines": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "bigint as string"
-            }
-          },
-          "tier": {
-            "oneOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "affirmative": {
-                    "type": "null"
-                  }
-                },
-                "required": [
-                  "affirmative"
-                ],
-                "additionalProperties": false
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "noncommittal": {
-                    "type": "null"
-                  }
-                },
-                "required": [
-                  "noncommittal"
-                ],
-                "additionalProperties": false
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "negative": {
-                    "type": "null"
-                  }
-                },
-                "required": [
-                  "negative"
-                ],
-                "additionalProperties": false
-              }
-            ]
-          },
-          "answer": {
-            "type": "string"
+              "refused"
+            ],
+            "additionalProperties": false
           }
-        },
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "question",
-          "timestamp",
-          "primary",
-          "changingLines",
-          "tier",
-          "answer"
         ],
         "$schema": "https://json-schema.org/draft/2020-12/schema"
       },

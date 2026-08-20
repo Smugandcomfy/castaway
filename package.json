@@ -13,7 +13,8 @@
     "schema": "bun ../../packages/neutron-scripts/src/method_schema.ts",
     "package:metadata": "bun ../../packages/neutron-scripts/src/package_metadata.ts",
     "validate": "bun ../../packages/neutron-scripts/src/validate.ts",
-    "package": "npm run validate && npm run build && npm run mopack && npm run schema && npm run package:metadata && bun ../../packages/neutron-scripts/src/pack.ts",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "package": "npm run validate && npm run typecheck && npm run build && npm run mopack && npm run schema && npm run package:metadata && bun ../../packages/neutron-scripts/src/pack.ts",
     "watch": "bun build.ts watch",
     "test": "bun test src/",
     "test:motoko": "mops test"
