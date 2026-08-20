@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Home from "./Home";
 import { loadJournal, setEntered, setTheme } from "./backend";
 import { ThemeContext } from "./Masthead";
+import { settledWithin } from "./settle";
 import {
   applyTheme,
   nextTheme,
@@ -86,6 +87,20 @@ export default function App() {
   /// ever *upgrades* it.
   const [view, setView] = useState<View>(() => viewFromHash() ?? "home");
 
+  /// True once it is known whether this reader has entered before.
+  ///
+  /// The splash is the honest default, but it is not a *known* answer, and on a
+  /// small tile the wordmark appearing and vanishing on every mount reads as a
+  /// glitch. So first paint waits — but only for a moment, and only for one of
+  /// three things: the journal answering, the journal failing, or a deadline.
+  /// That last one is not decoration. Gating first paint on a query with no
+  /// deadline is precisely what left this app blank forever on a real install,
+  /// with no error and nothing for the error boundary to catch.
+  ///
+  /// A shared link has already decided the view, so there is nothing to wait
+  /// for and it starts settled.
+  const [settled, setSettled] = useState<boolean>(() => viewFromHash() !== null);
+
   /// Null means "follow the system". The preference lives on the canister,
   /// so it cannot be known synchronously — the system setting applies until
   /// the journal answers, which is also the first-run default, so the common
@@ -101,13 +116,19 @@ export default function App() {
     // A shared link already decided the view; do not second-guess it.
     if (viewFromHash() !== null) return;
     let live = true;
-    void loadJournal()
+    const journal = loadJournal();
+    // The view upgrades whenever the journal answers, deadline or not.
+    void journal
       .then((j) => {
         if (live && j.flags.entered) setView("oracle");
       })
       .catch(() => {
-        // The splash is already on screen and is a reasonable place to be.
+        // The splash is a reasonable place to be, and is what settling shows.
       });
+    // Paint when the answer arrives or when time is up, whichever is first.
+    void settledWithin(journal, 1200).then(() => {
+      if (live) setSettled(true);
+    });
     return () => {
       live = false;
     };
@@ -218,6 +239,15 @@ export default function App() {
     );
 
   return (
-    <ThemeContext.Provider value={themeControl}>{page}</ThemeContext.Provider>
+    <ThemeContext.Provider value={themeControl}>
+      {settled ? (
+        page
+      ) : (
+        // The themed ground and nothing on it. Not `null`: an empty render
+        // would leave the tile transparent, and the whole point is that the
+        // reader sees one settled thing rather than a wordmark that flashes.
+        <div className="nt-app nt-app--fill cast-away" aria-hidden="true" />
+      )}
+    </ThemeContext.Provider>
   );
 }
