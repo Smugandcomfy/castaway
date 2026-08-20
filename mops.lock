@@ -1,0 +1,9 @@
+{
+  "version": 3,
+  "mopsTomlDepsHash": "5e2ff891ef9b7b5d2aee733182ac4f21b4446523a99b2b9428572fa0f4fd34af",
+  "deps": {
+    "core": "https://github.com/dfinity/motoko-core#v2.6.0",
+    "neutron-capabilities": "/home/vp/neutron/packages/neutron-motoko-capabilities"
+  },
+  "hashes": {}
+}

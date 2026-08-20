@@ -1,0 +1,11 @@
+# Build output
+dist/
+dev/dist/
+
+# Dependencies. `node_modules` here is a symlink into the Neutron workspace,
+# so it must be matched without a trailing slash — a trailing slash matches
+# directories only, and git would otherwise commit the symlink itself along
+# with the absolute path it points at.
+node_modules
+node_modules/
+.mops/

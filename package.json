@@ -1,0 +1,38 @@
+{
+  "main": "dist/index.js",
+  "packages": {},
+  "name": "neutron-cast-away",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "bun build.ts && npm run mogen",
+    "dev": "bun run build.dev.ts",
+    "mogen": "bun ./node_modules/neutron-scripts/src/mogen.ts",
+    "mopack": "bun ./node_modules/neutron-scripts/src/mopack.ts",
+    "schema": "bun ./node_modules/neutron-scripts/src/method_schema.ts",
+    "package:metadata": "bun ./node_modules/neutron-scripts/src/package_metadata.ts",
+    "validate": "bun ./node_modules/neutron-scripts/src/validate.ts",
+    "package": "npm run validate && npm run build && npm run mopack && npm run schema && npm run package:metadata && bun ./node_modules/neutron-scripts/src/pack.ts",
+    "watch": "bun build.ts watch",
+    "test": "bun test src/",
+    "test:motoko": "mops test"
+  },
+  "license": "LicenseRef-Neutron-Sovereign-Application-License-1.0",
+  "dependencies": {
+    "astronomy-engine": "^2.1.19",
+    "neutron-design-system": "^1.1.0",
+    "neutron-tools": "^1.1.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@dfinity/candid": "^3.4.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "esbuild": "^0.28.1",
+    "esbuild-sass-plugin": "^3.7.0",
+    "icblast": "^4.3.0",
+    "neutron-scripts": "^1.1.0"
+  }
+}

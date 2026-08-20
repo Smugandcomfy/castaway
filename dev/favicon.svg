@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Simple hexagram mark: six horizontal bars, three solid two broken one solid,
+       drawn as art (not text) so it renders identically without the CJK font. -->
+  <g fill="#c79a4b">
+    <rect x="10" y="8"  width="44" height="5" rx="1" />
+    <rect x="10" y="18" width="18" height="5" rx="1" />
+    <rect x="36" y="18" width="18" height="5" rx="1" />
+    <rect x="10" y="28" width="44" height="5" rx="1" />
+    <rect x="10" y="38" width="18" height="5" rx="1" />
+    <rect x="36" y="38" width="18" height="5" rx="1" />
+    <rect x="10" y="48" width="44" height="5" rx="1" />
+  </g>
+</svg>

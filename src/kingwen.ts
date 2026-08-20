@@ -1,0 +1,47 @@
+/// King Wen table and single-line helpers, in TypeScript. Source of truth
+/// for the frontend: dev/mock.ts imports from here, and src/debug.ts exposes
+/// these on window.__castAway so users can paste-verify claims from the FAQ.
+///
+/// The Motoko backend has its own copy in backend/oracle/Hexagrams.mo. Both
+/// are verified against each other and against the pairing rule.
+
+/// A hexagram is a 6-bit pattern: bit i (0 = bottom) is set when line i is
+/// yang. Bits 0-2 are the lower trigram, bits 3-5 the upper. Look up the
+/// King Wen number by that 6-bit index.
+export const KING_WEN: readonly number[] = [
+  // upper Kun
+  2, 24, 7, 19, 15, 36, 46, 11,
+  // upper Zhen
+  16, 51, 40, 54, 62, 55, 32, 34,
+  // upper Kan
+  8, 3, 29, 60, 39, 63, 48, 5,
+  // upper Dui
+  45, 17, 47, 58, 31, 49, 28, 43,
+  // upper Gen
+  23, 27, 4, 41, 52, 22, 18, 26,
+  // upper Li
+  35, 21, 64, 38, 56, 30, 50, 14,
+  // upper Xun
+  20, 42, 59, 61, 53, 37, 57, 9,
+  // upper Qian
+  12, 25, 6, 10, 33, 13, 44, 1,
+];
+
+export const isYang = (line: number): boolean => line === 7 || line === 9;
+export const isYin = (line: number): boolean => line === 6 || line === 8;
+export const isChanging = (line: number): boolean => line === 6 || line === 9;
+
+/// 6 (old yin)  -> 7 (young yang)
+/// 9 (old yang) -> 8 (young yin)
+/// 7, 8 unchanged.
+export const transform = (line: number): number =>
+  line === 6 ? 7 : line === 9 ? 8 : line;
+
+/// Given six coin-sum lines bottom-to-top, return the King Wen number.
+export function hexagramNumberOf(lines: number[]): number {
+  let index = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (isYang(lines[i])) index += 1 << i;
+  }
+  return KING_WEN[index];
+}

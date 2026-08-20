@@ -1,0 +1,119 @@
+/* Cast Away — orrery.css
+   Brass instrument on the app's dark ground. Built inside the design-system
+   rules: the Sun glow is concentric opacity rings (no banned paint types),
+   type is default-tracked local monospace, and nothing draws a frame.
+
+   Palette mirrors the deck. Re-point these four custom properties at the
+   real --sf-* tokens in one place and everything follows. */
+
+.orrery {
+  --orrery-gold: #c79a4b;   /* map to your --sf-* accent  */
+  --orrery-bone: #e9e2d2;   /* map to your --sf-* ink     */
+  --orrery-dim:  #8e8878;   /* map to your --sf-* muted   */
+  --orrery-line: #2a3247;   /* map to your --sf-* line    */
+
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+
+.orrery-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* --- orbits ---------------------------------------------------------- */
+
+.orrery-orbits {
+  /* Fades in when the ephemeris finishes computing (~200 ms post-paint),
+     so the two-stage render reads as intentional rather than glitchy. */
+  animation: orrery-orbits-in 700ms ease;
+}
+
+@keyframes orrery-orbits-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.orrery-orbits path {
+  fill: none;
+  stroke: var(--orrery-line);
+  stroke-width: 1;
+}
+
+/* --- sun: engraved glow via stacked opacity rings --------------------- */
+
+.orrery-sun-core  { fill: var(--orrery-gold); }
+.orrery-sun-halo1 { fill: var(--orrery-gold); opacity: 0.14; }
+.orrery-sun-halo2 { fill: var(--orrery-gold); opacity: 0.05; }
+
+/* --- planets ---------------------------------------------------------- */
+
+.orrery-planet { cursor: default; outline: none; }
+
+.orrery-dot { fill: var(--orrery-gold); }
+
+.orrery-planet--earth .orrery-dot { fill: var(--orrery-bone); }
+
+.orrery-dot--hollow {
+  fill: none;
+  stroke: var(--orrery-gold);
+  stroke-width: 1.5;
+}
+
+.orrery-saturn-ring {
+  fill: none;
+  stroke: var(--orrery-gold);
+  stroke-width: 1;
+  opacity: 0.8;
+}
+
+.orrery-planet.is-active .orrery-dot,
+.orrery-planet.is-active .orrery-dot--hollow {
+  stroke: var(--orrery-bone);
+  stroke-width: 1.5;
+}
+
+.orrery-planet:focus-visible .orrery-dot,
+.orrery-planet:focus-visible .orrery-dot--hollow {
+  stroke: var(--orrery-bone);
+  stroke-width: 2;
+}
+
+.orrery-label {
+  fill: var(--orrery-dim);
+  font-size: 10px;
+  user-select: none;
+}
+
+.orrery-planet.is-active .orrery-label { fill: var(--orrery-bone); }
+
+/* --- zodiac ring ------------------------------------------------------ */
+
+.orrery-ring line { stroke: var(--orrery-line); stroke-width: 1; }
+.orrery-ring text { fill: var(--orrery-dim); font-size: 9px; opacity: 0.85; }
+.orrery-ring .orrery-fiducial { fill: var(--orrery-gold); opacity: 0.9; }
+
+/* --- readout ---------------------------------------------------------- */
+
+.orrery-readout {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  font-size: 11px;
+  color: var(--orrery-dim);
+}
+
+.orrery-readout-body { color: var(--orrery-bone); min-height: 1em; }
+.orrery-readout-body:empty::before { content: '\00a0'; }
+.orrery-readout-time { white-space: nowrap; }
+
+/* --- ambient variant: inert backdrop layer ---------------------------- */
+
+.orrery--ambient {
+  opacity: 0.45;
+  pointer-events: none;
+}

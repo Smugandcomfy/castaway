@@ -1,0 +1,115 @@
+{
+  "format": 3,
+  "name": "Cast Away",
+  "id": "cast_away",
+  "version": 100,
+  "update_source": "233tv-xiaaa-aaaay-aacta-cai",
+  "src": "main.mo",
+  "description": "Ask a question. Three coins, six times, one answer.",
+  "backend": {
+    "capabilities": {
+      "randomness": {
+        "api": 1
+      }
+    }
+  },
+  "capabilities": {
+    "randomness": {
+      "api": 1
+    },
+    "preapproved_self_calls": {
+      "api": 1,
+      "methods": [
+        "consult",
+        "history",
+        "clear",
+        "journal",
+        "seal",
+        "save_draw",
+        "save_sigil",
+        "set_note",
+        "delete_entry",
+        "shuffle_deck",
+        "advance_deck",
+        "set_entered",
+        "set_place"
+      ]
+    }
+  },
+  "func": {
+    "consult": {
+      "type": "update",
+      "async": "async*"
+    },
+    "history": {
+      "type": "query",
+      "async": false
+    },
+    "stats": {
+      "type": "query",
+      "async": false
+    },
+    "journal": {
+      "type": "query",
+      "async": false
+    },
+    "seal": {
+      "type": "update",
+      "async": false
+    },
+    "save_draw": {
+      "type": "update",
+      "async": false
+    },
+    "save_sigil": {
+      "type": "update",
+      "async": false
+    },
+    "set_note": {
+      "type": "update",
+      "async": false
+    },
+    "delete_entry": {
+      "type": "update",
+      "async": false
+    },
+    "shuffle_deck": {
+      "type": "update",
+      "async": false
+    },
+    "advance_deck": {
+      "type": "update",
+      "async": false
+    },
+    "set_entered": {
+      "type": "update",
+      "async": false
+    },
+    "set_place": {
+      "type": "update",
+      "async": false
+    },
+    "clear": {
+      "type": "update",
+      "async": false
+    }
+  },
+  "memory": {
+    "cast_away": {
+      "version": 1,
+      "schemas": {
+        "1": {
+          "src": "memory/cast_away/v1.mo"
+        }
+      },
+      "migrations": []
+    }
+  },
+  "tiles": [
+    {
+      "id": "main",
+      "title": "Cast Away",
+      "path": "index.html"
+    }
+  ]
+}
