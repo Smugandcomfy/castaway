@@ -8,12 +8,12 @@
   "scripts": {
     "build": "bun build.ts && npm run mogen",
     "dev": "bun run build.dev.ts",
-    "mogen": "bun ./node_modules/neutron-scripts/src/mogen.ts",
-    "mopack": "bun ./node_modules/neutron-scripts/src/mopack.ts",
-    "schema": "bun ./node_modules/neutron-scripts/src/method_schema.ts",
-    "package:metadata": "bun ./node_modules/neutron-scripts/src/package_metadata.ts",
-    "validate": "bun ./node_modules/neutron-scripts/src/validate.ts",
-    "package": "npm run validate && npm run build && npm run mopack && npm run schema && npm run package:metadata && bun ./node_modules/neutron-scripts/src/pack.ts",
+    "mogen": "bun ../../packages/neutron-scripts/src/mogen.ts",
+    "mopack": "bun ../../packages/neutron-scripts/src/mopack.ts",
+    "schema": "bun ../../packages/neutron-scripts/src/method_schema.ts",
+    "package:metadata": "bun ../../packages/neutron-scripts/src/package_metadata.ts",
+    "validate": "bun ../../packages/neutron-scripts/src/validate.ts",
+    "package": "npm run validate && npm run build && npm run mopack && npm run schema && npm run package:metadata && bun ../../packages/neutron-scripts/src/pack.ts",
     "watch": "bun build.ts watch",
     "test": "bun test src/",
     "test:motoko": "mops test"

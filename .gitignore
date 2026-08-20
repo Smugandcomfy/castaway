@@ -2,10 +2,16 @@
 dist/
 dev/dist/
 
-# Dependencies. `node_modules` here is a symlink into the Neutron workspace,
-# so it must be matched without a trailing slash — a trailing slash matches
-# directories only, and git would otherwise commit the symlink itself along
-# with the absolute path it points at.
+# Packaging work directory. The workspace ignores this at its own root; this
+# repo is standalone so it needs the rule too. The finished archive and
+# neutron.lock.json ARE tracked, as they are for apps/chess.
+.neutron/
+
+# Dependencies. Provided by the Neutron workspace at the repository root; npm
+# creates this per-workspace when it needs to. It was previously a symlink
+# into the workspace, which is why the bare pattern is here as well as the
+# directory one — a trailing slash matches directories only, and git would
+# otherwise have committed the link and the absolute path it pointed at.
 node_modules
 node_modules/
 .mops/

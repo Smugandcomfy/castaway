@@ -7,20 +7,99 @@ import NeutronCapabilities "mo:neutron-capabilities";
 
 import Memory "./memory/cast_away/v1";
 import Cast "./oracle/Cast";
-import Types "./oracle/Types";
 
 module {
 
-  public type Reading = Types.Reading;
-  public type Stats = Types.Stats;
-  public type ConsultResult = Types.ConsultResult;
-  public type Card = Types.Card;
-  public type Seal = Types.Seal;
-  public type Draw = Types.Draw;
-  public type SigilEntry = Types.SigilEntry;
-  public type Deck = Types.Deck;
-  public type Flags = Types.Flags;
-  public type Journal = Types.Journal;
+  // ------------------------------------------------------------ wire types
+  //
+  // Every type reachable from a method's output is declared here rather than
+  // aliased from Types or Memory. The schema generator walks a method's
+  // return type and cannot follow a qualified cross-module reference, which
+  // is why apps/kitchensink declares all of its response records in main.mo
+  // and never returns a memory-schema type at all.
+  //
+  // These cost nothing to keep: Motoko is structurally typed, so a record
+  // declared identically here *is* the memory type, assignable without
+  // conversion — and if the two ever drift, the compiler says so rather than
+  // the wire quietly disagreeing with the store.
+
+  public type Tier = { #affirmative; #noncommittal; #negative };
+
+  public type Hexagram = {
+    lines : [Nat];
+    number : Nat;
+    pinyin : Text;
+    english : Text;
+    glyph : Text;
+  };
+
+  public type Reading = {
+    id : Nat;
+    question : Text;
+    timestamp : Int;
+    primary : Hexagram;
+    relating : ?Hexagram;
+    changingLines : [Nat];
+    tier : Tier;
+    answer : Text;
+  };
+
+  public type Card = { cardIndex : Nat; reversed : Bool; position : Text };
+
+  public type Seal = {
+    readingId : Nat;
+    sealedAt : Int;
+    movingLines : Nat;
+    cards : [Card];
+    kameaOrder : Nat;
+  };
+
+  public type Draw = {
+    id : Text;
+    drawnAt : Int;
+    movingLines : Nat;
+    cards : [Card];
+  };
+
+  public type SigilEntry = {
+    id : Text;
+    madeAt : Int;
+    phrase : Text;
+    movingLines : Nat;
+    overridden : Bool;
+  };
+
+  public type Note = { entryId : Text; body : Text; updatedAt : Int };
+
+  public type Deck = {
+    seed : Text;
+    cursor : Nat;
+    epoch : Nat;
+    shuffledAt : Int;
+  };
+
+  public type Flags = { entered : Bool; hasCast : Bool };
+
+  public type Journal = {
+    seals : [Seal];
+    draws : [Draw];
+    sigils : [SigilEntry];
+    notes : [Note];
+    deck : ?Deck;
+    flags : Flags;
+    place : ?Text;
+    theme : ?Text;
+  };
+
+  public type Stats = {
+    totalReadings : Nat;
+    affirmative : Nat;
+    noncommittal : Nat;
+    negative : Nat;
+  };
+
+  /// Declared structurally for the same reason as the rest.
+  public type ConsultResult = { #ok : Reading; #err : Text };
 
   public type AppBackendEnvironment = {
     stable_memory : { cast_away : Memory.Mem };
@@ -172,24 +251,24 @@ module {
 
     /// Attach, replace, or (with an empty body) remove a note.
     public func /*update*/ set_note(entryId : Text, body : Text) : () {
-      let others = Array.filter<Types.Note>(mem.notes, func(n) { n.entryId != entryId });
+      let others = Array.filter<Note>(mem.notes, func(n) { n.entryId != entryId });
       if (Text.size(Text.trim(body, #char ' ')) == 0) {
         mem.notes := others;
         return;
       };
-      let entry : Types.Note = {
+      let entry : Note = {
         entryId;
         body = truncate(body, MAX_NOTE_CHARS);
         updatedAt = Time.now();
       };
-      mem.notes := Memory.append<Types.Note>(others, entry, MAX_NOTES);
+      mem.notes := Memory.append<Note>(others, entry, MAX_NOTES);
     };
 
     /// Remove one standalone entry and any note attached to it.
     public func /*update*/ delete_entry(id : Text) : () {
       mem.draws := Array.filter<Draw>(mem.draws, func(d) { d.id != id });
       mem.sigils := Array.filter<SigilEntry>(mem.sigils, func(s) { s.id != id });
-      mem.notes := Array.filter<Types.Note>(mem.notes, func(n) { n.entryId != id });
+      mem.notes := Array.filter<Note>(mem.notes, func(n) { n.entryId != id });
     };
 
     // ---------------------------------------------------------------- deck

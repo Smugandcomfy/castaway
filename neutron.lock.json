@@ -1,0 +1,15 @@
+{
+  "format": 2,
+  "app": "cast_away",
+  "memory": {
+    "cast_away": {
+      "schemas": {
+        "1": {
+          "hash": "51fda2f2e7c6cd5ab609a9edd94098f95d66dacb5083795f2b8a8d233ae96314",
+          "entry": "2353805e370a0e54a3034f5e291b829ba997d9ec2f2d8481d9e6d69843fa70e1"
+        }
+      },
+      "migrations": {}
+    }
+  }
+}

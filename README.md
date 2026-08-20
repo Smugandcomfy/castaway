@@ -154,13 +154,15 @@ of this.
 
 ## License
 
-Neutron Sovereign Application License, Version 1.0 —
-`LicenseRef-Neutron-Sovereign-Application-License-1.0`. The full text is in
-[`LICENSE`](LICENSE); [`NOTICE`](NOTICE) applies it to this application.
+The repository is published under the MIT License — see
+[`LICENSE.md`](LICENSE.md).
 
-Not an OSI-approved open source licence. Provider-operated Production Use is
-permitted only in a Qualifying Sovereign System; private personal use is
-protected by sections 2 and 3.
+The packaged Neutron application is a separate matter: `package.json` declares
+`LicenseRef-Neutron-Sovereign-Application-License-1.0` and
+[`NOTICE`](NOTICE) applies the Neutron Sovereign Application License to it,
+whose full text lives at the Neutron workspace root as `LICENSE.APP`. That
+license is not OSI-approved: provider-operated Production Use is permitted
+only in a Qualifying Sovereign System.
 
 ---
 
