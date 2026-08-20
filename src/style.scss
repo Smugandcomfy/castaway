@@ -627,13 +627,14 @@
     .ca-oracle-orrery {
       display: flex;
       justify-content: center;
-      padding: 4px 0 8px;
-      opacity: 0.85;
+      padding: 4px 0 12px;
     }
 
+    // It shrinks with the viewport rather than clipping, so the cap is an
+    // upper bound and not a fixed size.
     .ca-oracle-orrery .orrery {
       width: 100% !important;
-      max-width: 180px;
+      max-width: 260px;
     }
 
     .ca-oracle-orrery .orrery-readout { display: none; }
@@ -1125,16 +1126,6 @@
       .ca-sky-luminary-body {
         font-size: 24px;
       }
-    }
-
-    // The summary reads as an essay rather than a reference, so it gets a
-    // comfortable measure and a little more air between paragraphs.
-    .ca-summary .nt-text {
-      max-width: 66ch;
-    }
-
-    .ca-summary .nt-text + .nt-text {
-      margin-top: 16px;
     }
 
     // ================================================================ legend
@@ -1703,6 +1694,16 @@
     // rather than swapping palettes out from under the reader.
     --ca-bg-reading: #e2d6b8;
 
+    // The orrery's own line weight and colour.
+    //
+    // These were pointed at --nt-line-subtle, which is the hairline-divider
+    // token: about 1.2:1 against paper, so the orbits — the instrument's
+    // entire structure — were all but invisible on the light ground. An
+    // orrery is drawn, not divided, so it gets its own weight.
+    --ca-orrery-line: #a08d64;
+    --ca-orrery-weight: 1.3;
+    --ca-orrery-glow: 0.3;
+
     // Emboss for the splash wordmark: paper-highlight above, ink below.
     --ca-emboss:
       0 1px 0 rgba(255, 255, 255, 0.65),
@@ -1717,6 +1718,12 @@
   :root[data-ca-theme="dark"] .nt-app.cast-away {
     color-scheme: dark;
     --ca-bg-reading: #020406;
+
+    // The dark ground was the orrery's original home and needs less help,
+    // but the orbits carry the drawing on both, so they gain a little too.
+    --ca-orrery-line: #3a4560;
+    --ca-orrery-weight: 1.15;
+    --ca-orrery-glow: 0.14;
 
     // On a dark ground the emboss inverts: a whisper of light above the
     // letterform, depth below. The paper values would read as chalk dust.

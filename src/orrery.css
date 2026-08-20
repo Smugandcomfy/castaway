@@ -14,7 +14,11 @@
   --orrery-gold: var(--sf-accent, #c79a4b);
   --orrery-bone: var(--nt-text, #e9e2d2);
   --orrery-dim:  var(--nt-text-muted, #8e8878);
-  --orrery-line: var(--nt-line-subtle, #2a3247);
+  /* Not --nt-line-subtle: that is a divider weight, and against paper it
+     left the orbits at roughly 1.2:1 — the structure of the drawing, nearly
+     invisible. The app sets --ca-orrery-line per theme. */
+  --orrery-line: var(--ca-orrery-line, #2a3247);
+  --orrery-weight: var(--ca-orrery-weight, 1);
 
   aspect-ratio: 1 / 1;
   max-width: 100%;
@@ -44,14 +48,17 @@
 .orrery-orbits path {
   fill: none;
   stroke: var(--orrery-line);
-  stroke-width: 1;
+  stroke-width: var(--orrery-weight);
+  /* Round joins keep a heavier line feeling drawn rather than plotted. */
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* --- sun: engraved glow via stacked opacity rings --------------------- */
 
 .orrery-sun-core  { fill: var(--orrery-gold); }
-.orrery-sun-halo1 { fill: var(--orrery-gold); opacity: 0.14; }
-.orrery-sun-halo2 { fill: var(--orrery-gold); opacity: 0.05; }
+.orrery-sun-halo1 { fill: var(--orrery-gold); opacity: var(--ca-orrery-glow, 0.14); }
+.orrery-sun-halo2 { fill: var(--orrery-gold); opacity: calc(var(--ca-orrery-glow, 0.14) * 0.36); }
 
 /* --- planets ---------------------------------------------------------- */
 
@@ -70,7 +77,7 @@
 .orrery-saturn-ring {
   fill: none;
   stroke: var(--orrery-gold);
-  stroke-width: 1;
+  stroke-width: var(--orrery-weight);
   opacity: 0.8;
 }
 
@@ -96,7 +103,7 @@
 
 /* --- zodiac ring ------------------------------------------------------ */
 
-.orrery-ring line { stroke: var(--orrery-line); stroke-width: 1; }
+.orrery-ring line { stroke: var(--orrery-line); stroke-width: var(--orrery-weight); }
 .orrery-ring text { fill: var(--orrery-dim); font-size: 9px; opacity: 0.85; }
 .orrery-ring .orrery-fiducial { fill: var(--orrery-gold); opacity: 0.9; }
 

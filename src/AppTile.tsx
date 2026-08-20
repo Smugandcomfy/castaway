@@ -260,7 +260,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
             with the hexagram reveal. */}
         {!reading && (
           <div className="ca-oracle-orrery" aria-hidden="true">
-            <Orrery size={180} showZodiac={false} showLabels={false} />
+            <Orrery size={260} showZodiac={false} showLabels={false} />
           </div>
         )}
 
