@@ -114,7 +114,9 @@
     {
       "id": "main",
       "title": "Cast Away",
-      "path": "index.html"
+      "path": "index.html",
+      "icon": "static/icon.svg",
+      "description": "Ask a question. Three coins, six times, one answer."
     }
   ]
 }
