@@ -103,9 +103,28 @@
 
 /* --- zodiac ring ------------------------------------------------------ */
 
-.orrery-ring line { stroke: var(--orrery-line); stroke-width: var(--orrery-weight); }
-.orrery-ring text { fill: var(--orrery-dim); font-size: 9px; opacity: 0.85; }
-.orrery-ring .orrery-fiducial { fill: var(--orrery-gold); opacity: 0.9; }
+/* The zodiac ring is the dial's face, so it carries more weight than the
+   orbits inside it: a drawn band, longer division ticks, and letters large
+   enough to read as engraving rather than as a caption. */
+.orrery-ring-band {
+  stroke: var(--orrery-line);
+  stroke-width: calc(var(--orrery-weight) * 0.9);
+  opacity: 0.7;
+}
+
+.orrery-ring line {
+  stroke: var(--orrery-line);
+  stroke-width: calc(var(--orrery-weight) * 1.35);
+  stroke-linecap: round;
+}
+
+.orrery-ring text {
+  fill: var(--orrery-dim);
+  font-size: 12px;
+  opacity: 1;
+}
+
+.orrery-ring .orrery-fiducial { fill: var(--orrery-gold); opacity: 1; }
 
 /* --- readout ---------------------------------------------------------- */
 

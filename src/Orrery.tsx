@@ -131,7 +131,9 @@ export default function Orrery({
 
   const activeState = active ? states.find((s) => s.key === active) : undefined;
   const ambient = variant === 'ambient';
-  const ringR = OUTER_ZODIAC + 18;
+  // 292 of the 320 available. Checked against the viewBox: the outermost
+  // label reaches 316, leaving four units of margin at the widest point.
+  const ringR = OUTER_ZODIAC + 30;
 
   return (
     <div
@@ -146,10 +148,19 @@ export default function Orrery({
       >
         {showZodiac && (
           <g className="orrery-ring" aria-hidden="true">
+            {/* The band itself. Without it the ring was only ticks and
+                letters, which reads as scattered marks rather than a dial. */}
+            <circle
+              className="orrery-ring-band"
+              cx={CX}
+              cy={CY}
+              r={ringR}
+              fill="none"
+            />
             {ZODIAC_ABBR.map((abbr, i) => {
-              const tick = polarToScreen(i * 30, ringR - 6, CX, CY);
-              const tickOut = polarToScreen(i * 30, ringR + 2, CX, CY);
-              const mid = polarToScreen(i * 30 + 15, ringR + 4, CX, CY);
+              const tick = polarToScreen(i * 30, ringR - 11, CX, CY);
+              const tickOut = polarToScreen(i * 30, ringR + 3, CX, CY);
+              const mid = polarToScreen(i * 30 + 15, ringR + 16, CX, CY);
               return (
                 <g key={abbr}>
                   <line x1={tick.x} y1={tick.y} x2={tickOut.x} y2={tickOut.y} />

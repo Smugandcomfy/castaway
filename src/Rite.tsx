@@ -9,10 +9,12 @@
 
 export type Stage = "question" | "cards" | "sigil";
 
+/// The three named stages of a cast. The keys stay short because they are
+/// internal; the labels are what the rite is actually called.
 const STEPS: readonly { key: Stage; label: string }[] = [
-  { key: "question", label: "Question" },
-  { key: "cards", label: "Cards" },
-  { key: "sigil", label: "Sigil" },
+  { key: "question", label: "Cast Intention" },
+  { key: "cards", label: "Tarot" },
+  { key: "sigil", label: "Sealing Ceremony" },
 ];
 
 export function Rite({ at, done }: { at: Stage; done: readonly Stage[] }) {

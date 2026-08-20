@@ -70,13 +70,12 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
   /// and the whole thing becomes one journal entry. Null until sealed.
   const [sealed, setSealed] = useState<Seal | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const cardsRef = useRef<HTMLElement | null>(null);
   const sigilRef = useRef<HTMLElement | null>(null);
 
-  /// A stage that has just appeared is almost always below the fold, and the
-  /// page used to say nothing about it — you had to discover the next step by
-  /// scrolling. Bring it into view instead. Honours reduced-motion, which the
-  /// rest of the app already respects.
+  /// Brings a newly revealed stage into view. Used only when the reader has
+  /// asked for the next thing — never to move them off something they are
+  /// still reading. Honours reduced-motion, which the rest of the app already
+  /// respects.
   function reveal(node: HTMLElement | null) {
     if (!node) return;
     const still = window.matchMedia?.(
@@ -204,9 +203,11 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
     if (result.relating.length > 0) {
       timers.current.push(setTimeout(() => setTransformed(true), 2400));
     }
-    // The six lines finish at 6 x 260ms; give the verdict a beat to land
-    // before moving, so the answer is read rather than skipped past.
-    timers.current.push(setTimeout(() => reveal(cardsRef.current), 2800));
+    // Deliberately no scroll here. The answer is the thing the reader came
+    // for, and moving the page out from under it — even after a beat — reads
+    // as the app hurrying them past it. The spine says the cards are below;
+    // getting there is their decision. Sealing does move the page, because by
+    // then the reader has asked for the next thing.
   }
 
   async function consult() {
@@ -411,7 +412,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
             They read the intention the question cast; the sigil cannot be
             drawn until they are on the table. */}
         {reading && settled && (
-          <section className="nt-section sf-tarot" ref={cardsRef}>
+          <section className="nt-section sf-tarot">
             <p className="nt-muted sf-tarot__intro">
               Now three cards read the intention you cast — they say nothing
               about yes or no, they describe the ground you are standing on.
