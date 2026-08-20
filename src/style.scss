@@ -689,14 +689,17 @@
     // Small ghost buttons under the reading and the sigil: transform, copy,
     // save. Grouped and centered so they read as tools, not headline actions.
 
+    // What "Save the sigil" managed to do. A tile cannot start a download and
+    // cannot be told that it failed, so the button says what is actually known.
     .ca-save-note {
-  margin: var(--nt-gap-2) 0 0;
-  font-size: 0.85rem;
-  color: var(--nt-text-muted, currentColor);
-  opacity: 0.85;
-}
+      margin: var(--nt-gap-2) 0 0;
+      font-size: 0.85rem;
+      color: var(--nt-text-muted);
+      opacity: 0.85;
+      text-align: center;
+    }
 
-.ca-reading-actions {
+    .ca-reading-actions {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
@@ -1925,12 +1928,21 @@
     padding: 40px 16px;
   }
 
+  // Every dimension on this page used to be a fixed pixel cap, so the splash
+  // stayed a 560px column with a 380px orrery no matter how wide the frame
+  // was — which on a desktop tile reads as a phone screen floating in the
+  // middle of the window. A tile's width is whatever its cell is, so there is
+  // no single right number; the whole composition scales with the viewport
+  // instead. Every clamp *floors* at the value it had before, so nothing below
+  // about 1080px moves at all -- this only ever adds size on a frame wider
+  // than the one the page was tuned on. The phone rule below still applies,
+  // because a 78px floor is far too big for a 400px tile.
   .ca-home-inner {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    max-width: 560px;
+    gap: clamp(20px, 1.9vw, 30px);
+    max-width: clamp(560px, 62vw, 820px);
     width: 100%;
   }
 
@@ -1938,7 +1950,7 @@
     font-family: Baskerville, "Palatino Linotype", "Book Antiqua", Georgia,
       "Times New Roman", serif;
     font-weight: 900;
-    font-size: 78px;
+    font-size: clamp(78px, 7.2vw, 104px);
     line-height: 1;
     letter-spacing: 0;
     // Stay on a single line — CAST AWAY reads as one mark, not two.
@@ -1953,15 +1965,18 @@
     text-shadow: var(--ca-emboss);
   }
 
+  // Phones: the ramp's floor is still too large here, so the wordmark steps
+  // down explicitly.
   @media (max-width: 520px) {
     .ca-home-title { font-size: 44px; }
+    .ca-home-inner { max-width: 100%; }
   }
 
   .ca-home-subtitle {
     font-family: Baskerville, "Palatino Linotype", "Book Antiqua", Georgia,
       serif;
     font-style: italic;
-    font-size: 17px;
+    font-size: clamp(17px, 1.6vw, 22px);
     color: var(--nt-text-muted);
     text-align: center;
     letter-spacing: 0;
@@ -1971,7 +1986,7 @@
 
   .ca-home-orrery {
     width: 100%;
-    max-width: 380px;
+    max-width: clamp(380px, 35vw, 520px);
     display: flex;
     justify-content: center;
   }
