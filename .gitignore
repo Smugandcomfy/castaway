@@ -1,5 +1,11 @@
-# Build output
-dist/
+# Build output. `dist/*` rather than `dist/`, because git will not re-include a
+# file underneath an excluded *directory* -- the exception below only works if
+# the contents are excluded rather than the directory itself.
+dist/*
+# ...and the generated Candid schema is exempt: it is the wire contract, not a
+# build leftover. src/wire.test.ts validates every outgoing call against it, so
+# an interface change shows up in a diff someone reads.
+!dist/schema.json
 dev/dist/
 
 # Packaging work directory. The workspace ignores this at its own root; this

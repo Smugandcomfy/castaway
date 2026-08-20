@@ -7,7 +7,10 @@ import { journalCache, loadJournal, setNote } from "./backend";
 export function NoteEditor({ entryId }: { entryId: string }) {
   const [body, setBody] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
-  const [saved, setSaved] = useState<boolean>(false);
+  /// "Saved" has to mean saved. `void setNote(...)` followed by an
+  /// unconditional `setSaved(true)` told the reader their note was kept even
+  /// when the write rejected, and left the rejection unhandled.
+  const [status, setStatus] = useState<"idle" | "saved" | "failed">("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -37,11 +40,7 @@ export function NoteEditor({ entryId }: { entryId: string }) {
   function schedule(next: string) {
     setBody(next);
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      void setNote(entryId, next);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1200);
-    }, 500);
+    saveTimer.current = setTimeout(() => void commit(next), 500);
   }
 
   function flush() {
@@ -49,9 +48,17 @@ export function NoteEditor({ entryId }: { entryId: string }) {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
     }
-    void setNote(entryId, body);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1200);
+    void commit(body);
+  }
+
+  async function commit(next: string) {
+    try {
+      await setNote(entryId, next);
+      setStatus("saved");
+    } catch {
+      setStatus("failed");
+    }
+    setTimeout(() => setStatus("idle"), 1800);
   }
 
   if (!open) {
@@ -78,7 +85,13 @@ export function NoteEditor({ entryId }: { entryId: string }) {
         aria-label="Note for this entry"
       />
       <span className="ca-note-status">
-        {saved ? "Saved" : body.length > 0 ? " " : "Notes are kept with the reading."}
+        {status === "saved"
+          ? "Saved"
+          : status === "failed"
+            ? "Not saved — try again."
+            : body.length > 0
+              ? " "
+              : "Notes are kept with the reading."}
       </span>
     </div>
   );

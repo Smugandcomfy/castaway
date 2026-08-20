@@ -159,18 +159,30 @@ export function callCanisterDialog(
 }
 
 function dispatch(method: string, args: any[]) {
+  // The wire hands over exactly ONE argument, and the kernel's schema is the
+  // authority: every method's input has a single top-level element. Motoko
+  // arity is what misleads — `(a, b)` is one tuple, `(a)` is just `a`, and
+  // `()` is null. Unpack it the way the kernel does, or this mock goes back to
+  // agreeing with a frontend that the real canister rejects.
+  const arg = args[0] ?? null;
+  const tuple: any[] = Array.isArray(arg) ? arg : [arg];
   return (async () => {
       // Roughly the latency of a real update call, so the UI is honest about waiting.
       await delay(method === "consult" ? 900 : 120);
       switch (method) {
         case "consult": {
-          const q = String(args[0] ?? "").trim();
-          if (!q) return { err: "Ask a question first." };
-          if (q.length > 500) return { err: "Keep the question under 500 characters." };
+          // A two-arm ok/err variant is unwrapped by the kernel: the `ok`
+          // payload comes back bare and the `err` payload is *thrown*
+          // (apps/kernel/src/self_calls.ts:1609-1621). Mirroring that here is
+          // the whole point of this file -- returning `{ok: r}` is what let
+          // the real bug hide behind a green suite.
+          const q = String(tuple[0] ?? "").trim();
+          if (!q) throw "Ask a question first.";
+          if (q.length > 500) throw "Keep the question under 500 characters.";
           const r = cast(q);
           history.push(r);
           flags = { ...flags, hasCast: true };
-          return { ok: r };
+          return r;
         }
         case "history":
           return [...history].reverse();
@@ -195,7 +207,7 @@ function dispatch(method: string, args: any[]) {
             theme: theme ?? null,
           };
         case "seal": {
-          const [readingId, movingLines, kameaOrder, cards] = args;
+          const [readingId, movingLines, kameaOrder, cards] = tuple;
           const order = Number(kameaOrder) < 3 || Number(kameaOrder) > 9 ? 3 : Number(kameaOrder);
           const entry = {
             readingId: nat(readingId),
@@ -212,7 +224,7 @@ function dispatch(method: string, args: any[]) {
           return entry;
         }
         case "save_draw": {
-          const [movingLines, cards] = args;
+          const [movingLines, cards] = tuple;
           const entry = {
             id: `draw-${nextEntryId++}`,
             drawnAt: nowNs(),
@@ -223,7 +235,7 @@ function dispatch(method: string, args: any[]) {
           return entry;
         }
         case "save_sigil": {
-          const [phrase, movingLines, overridden] = args;
+          const [phrase, movingLines, overridden] = tuple;
           const entry = {
             id: `sigil-${nextEntryId++}`,
             madeAt: nowNs(),
@@ -235,7 +247,7 @@ function dispatch(method: string, args: any[]) {
           return entry;
         }
         case "set_note": {
-          const [entryId, body] = args;
+          const [entryId, body] = tuple;
           const others = notes.filter((n) => n.entryId !== entryId);
           notes =
             String(body).trim().length === 0
@@ -252,14 +264,14 @@ function dispatch(method: string, args: any[]) {
           return null;
         }
         case "delete_entry": {
-          const [id] = args;
+          const [id] = tuple;
           draws = draws.filter((d) => d.id !== id);
           sigils = sigils.filter((s) => s.id !== id);
           notes = notes.filter((n) => n.entryId !== id);
           return null;
         }
         case "shuffle_deck": {
-          const [seed] = args;
+          const [seed] = tuple;
           const prevEpoch = deck ? Number(Number(deck.epoch)) : 0;
           deck = {
             seed,
@@ -270,7 +282,7 @@ function dispatch(method: string, args: any[]) {
           return deck;
         }
         case "advance_deck": {
-          const cursor = Number(args[0]);
+          const cursor = Number(tuple[0]);
           if (cursor > 78 || cursor % 3 !== 0) return false;
           if (!deck) return false;
           if (cursor < Number(deck.cursor)) return false;
@@ -281,10 +293,10 @@ function dispatch(method: string, args: any[]) {
           flags = { ...flags, entered: true };
           return null;
         case "set_theme":
-          theme = args[0] === "light" || args[0] === "dark" ? String(args[0]) : null;
+          theme = tuple[0] === "light" || tuple[0] === "dark" ? String(tuple[0]) : null;
           return null;
         case "set_place":
-          place = String(args[0] ?? "").slice(0, 120) || null;
+          place = String(tuple[0] ?? "").slice(0, 120) || null;
           return null;
         case "clear":
           history.length = 0;

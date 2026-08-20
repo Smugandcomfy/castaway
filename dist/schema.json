@@ -1,0 +1,1051 @@
+{
+  "$schema": "https://neutron.app/schema/app-methods.v1.json",
+  "version": 1,
+  "app": {
+    "id": "cast_away",
+    "name": "Cast Away",
+    "version": 108
+  },
+  "methods": {
+    "consult": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "string"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "primary": {
+            "type": "object",
+            "properties": {
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "bigint as string"
+                }
+              },
+              "number": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "pinyin": {
+                "type": "string"
+              },
+              "english": {
+                "type": "string"
+              },
+              "glyph": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "lines",
+              "number",
+              "pinyin",
+              "english",
+              "glyph"
+            ]
+          },
+          "relating": {
+            "type": "object",
+            "properties": {
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "bigint as string"
+                }
+              },
+              "number": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "pinyin": {
+                "type": "string"
+              },
+              "english": {
+                "type": "string"
+              },
+              "glyph": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "lines",
+              "number",
+              "pinyin",
+              "english",
+              "glyph"
+            ]
+          },
+          "changingLines": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "bigint as string"
+            }
+          },
+          "tier": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "affirmative": {
+                    "type": "null"
+                  }
+                },
+                "required": [
+                  "affirmative"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "noncommittal": {
+                    "type": "null"
+                  }
+                },
+                "required": [
+                  "noncommittal"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "negative": {
+                    "type": "null"
+                  }
+                },
+                "required": [
+                  "negative"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "answer": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "question",
+          "timestamp",
+          "primary",
+          "changingLines",
+          "tier",
+          "answer"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "history": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "null"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "bigint as string"
+            },
+            "question": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "description": "bigint as string"
+            },
+            "primary": {
+              "type": "object",
+              "properties": {
+                "lines": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "bigint as string"
+                  }
+                },
+                "number": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "pinyin": {
+                  "type": "string"
+                },
+                "english": {
+                  "type": "string"
+                },
+                "glyph": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "lines",
+                "number",
+                "pinyin",
+                "english",
+                "glyph"
+              ]
+            },
+            "relating": {
+              "type": "object",
+              "properties": {
+                "lines": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "bigint as string"
+                  }
+                },
+                "number": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "pinyin": {
+                  "type": "string"
+                },
+                "english": {
+                  "type": "string"
+                },
+                "glyph": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "lines",
+                "number",
+                "pinyin",
+                "english",
+                "glyph"
+              ]
+            },
+            "changingLines": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "bigint as string"
+              }
+            },
+            "tier": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "affirmative": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "affirmative"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "noncommittal": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "noncommittal"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "negative": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "negative"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "answer": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "question",
+            "timestamp",
+            "primary",
+            "changingLines",
+            "tier",
+            "answer"
+          ]
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "query"
+    },
+    "stats": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "null"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "totalReadings": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "affirmative": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "noncommittal": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "negative": {
+            "type": "string",
+            "description": "bigint as string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "totalReadings",
+          "affirmative",
+          "noncommittal",
+          "negative"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "query"
+    },
+    "journal": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "null"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "seals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "readingId": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "sealedAt": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "movingLines": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "cards": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "cardIndex": {
+                        "type": "string",
+                        "description": "bigint as string"
+                      },
+                      "reversed": {
+                        "type": "boolean"
+                      },
+                      "position": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                      "cardIndex",
+                      "reversed",
+                      "position"
+                    ]
+                  }
+                },
+                "kameaOrder": {
+                  "type": "string",
+                  "description": "bigint as string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "readingId",
+                "sealedAt",
+                "movingLines",
+                "cards",
+                "kameaOrder"
+              ]
+            }
+          },
+          "draws": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "drawnAt": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "movingLines": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "cards": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "cardIndex": {
+                        "type": "string",
+                        "description": "bigint as string"
+                      },
+                      "reversed": {
+                        "type": "boolean"
+                      },
+                      "position": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                      "cardIndex",
+                      "reversed",
+                      "position"
+                    ]
+                  }
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "drawnAt",
+                "movingLines",
+                "cards"
+              ]
+            }
+          },
+          "sigils": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "madeAt": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "phrase": {
+                  "type": "string"
+                },
+                "movingLines": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "overridden": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "madeAt",
+                "phrase",
+                "movingLines",
+                "overridden"
+              ]
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "entryId": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "description": "bigint as string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "entryId",
+                "body",
+                "updatedAt"
+              ]
+            }
+          },
+          "deck": {
+            "type": "object",
+            "properties": {
+              "seed": {
+                "type": "string"
+              },
+              "cursor": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "epoch": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "shuffledAt": {
+                "type": "string",
+                "description": "bigint as string"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "seed",
+              "cursor",
+              "epoch",
+              "shuffledAt"
+            ]
+          },
+          "flags": {
+            "type": "object",
+            "properties": {
+              "entered": {
+                "type": "boolean"
+              },
+              "hasCast": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "entered",
+              "hasCast"
+            ]
+          },
+          "place": {
+            "type": "string"
+          },
+          "theme": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "seals",
+          "draws",
+          "sigils",
+          "notes",
+          "flags"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "query"
+    },
+    "seal": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "cardIndex": {
+                      "type": "string",
+                      "description": "bigint as string"
+                    },
+                    "reversed": {
+                      "type": "boolean"
+                    },
+                    "position": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "cardIndex",
+                    "reversed",
+                    "position"
+                  ]
+                }
+              }
+            ],
+            "minItems": 4,
+            "maxItems": 4
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "readingId": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "sealedAt": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "movingLines": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cardIndex": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "reversed": {
+                  "type": "boolean"
+                },
+                "position": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "cardIndex",
+                "reversed",
+                "position"
+              ]
+            }
+          },
+          "kameaOrder": {
+            "type": "string",
+            "description": "bigint as string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "readingId",
+          "sealedAt",
+          "movingLines",
+          "cards",
+          "kameaOrder"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "save_draw": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "cardIndex": {
+                      "type": "string",
+                      "description": "bigint as string"
+                    },
+                    "reversed": {
+                      "type": "boolean"
+                    },
+                    "position": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "cardIndex",
+                    "reversed",
+                    "position"
+                  ]
+                }
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "drawnAt": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "movingLines": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cardIndex": {
+                  "type": "string",
+                  "description": "bigint as string"
+                },
+                "reversed": {
+                  "type": "boolean"
+                },
+                "position": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "cardIndex",
+                "reversed",
+                "position"
+              ]
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "drawnAt",
+          "movingLines",
+          "cards"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "save_sigil": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "minItems": 3,
+            "maxItems": 3
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "madeAt": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "phrase": {
+            "type": "string"
+          },
+          "movingLines": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "overridden": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "madeAt",
+          "phrase",
+          "movingLines",
+          "overridden"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "set_note": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "null",
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "delete_entry": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "string"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "null",
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "shuffle_deck": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "string"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "seed": {
+            "type": "string"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "epoch": {
+            "type": "string",
+            "description": "bigint as string"
+          },
+          "shuffledAt": {
+            "type": "string",
+            "description": "bigint as string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "seed",
+          "cursor",
+          "epoch",
+          "shuffledAt"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "advance_deck": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "string",
+            "description": "bigint as string"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "boolean",
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "set_entered": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "null"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "null",
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "set_theme": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "string"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "null",
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "set_place": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "string"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "null",
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    },
+    "clear": {
+      "input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "null"
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "output": {
+        "type": "null",
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "type": "update"
+    }
+  }
+}
