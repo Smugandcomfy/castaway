@@ -3,8 +3,10 @@ import type { CSSProperties } from "react";
 const isYang = (line: number) => line === 7 || line === 9;
 
 export interface HexagramProps {
-  lines: bigint[] | number[];
-  changing?: (bigint | number)[];
+  /// Decimal strings off the self-call wire, or numbers from local code.
+  /// Both are coerced below, so either is fine.
+  lines: readonly (string | number | bigint)[];
+  changing?: readonly (string | number | bigint)[];
   revealed?: number;
   transformed?: boolean;
   small?: boolean;

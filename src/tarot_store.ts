@@ -22,10 +22,10 @@ export interface SavedCard {
 
 const pulls = new Map<string, SavedCard[][]>();
 
-const key = (readingId: bigint | number) => String(readingId);
+const key = (readingId: string | bigint | number) => String(readingId);
 
 export function saveTarotPull(
-  readingId: bigint | number,
+  readingId: string | bigint | number,
   pull: DrawnCard[],
 ): void {
   const existing = pulls.get(key(readingId)) ?? [];
@@ -40,6 +40,8 @@ export function saveTarotPull(
 }
 
 /// All pulls made for this reading this session, oldest first.
-export function loadTarotPulls(readingId: bigint | number): SavedCard[][] {
+export function loadTarotPulls(
+  readingId: string | bigint | number,
+): SavedCard[][] {
   return pulls.get(key(readingId)) ?? [];
 }

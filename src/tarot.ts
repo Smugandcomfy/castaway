@@ -141,8 +141,8 @@ export function newNonce(): number {
 /// Partial Fisher-Yates: a real deal without replacement, so no card can
 /// appear twice in one spread. Only three swaps are needed.
 export function draw(
-  readingId: bigint | number,
-  kingWen: bigint | number,
+  readingId: string | bigint | number,
+  kingWen: string | bigint | number,
   question: string,
   nonce: number,
 ): DrawnCard[] {

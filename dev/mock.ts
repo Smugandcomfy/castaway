@@ -9,6 +9,13 @@
 
 import { KING_WEN, isYang, isChanging, transform } from "../src/kingwen";
 
+/// Motoko `Nat`/`Int` cross the self-call wire as decimal strings —
+/// `SelfCallValue` has no bigint member. This mock used to hand back BigInt,
+/// so every number in the app was the wrong type in development and nobody
+/// found out until it ran on a real kernel. Mirror the wire, not convenience.
+const nat = (n: number | bigint): string => String(n);
+const nowNat = (): string => String(Date.now() * 1_000_000);
+
 const NAMES: [string, string][] = [
   ["Qian", "The Creative"], ["Kun", "The Receptive"], ["Zhun", "Difficulty at the Beginning"],
   ["Meng", "Youthful Folly"], ["Xu", "Waiting"], ["Song", "Conflict"], ["Shi", "The Army"],
@@ -53,8 +60,8 @@ function describe(lines: number[]) {
   });
   const number = KING_WEN[index];
   return {
-    lines: lines.map(BigInt),
-    number: BigInt(number),
+    lines: lines.map(nat),
+    number: nat(number),
     pinyin: NAMES[number - 1][0],
     english: NAMES[number - 1][1],
     glyph: String.fromCodePoint(0x4dc0 + number - 1),
@@ -90,7 +97,7 @@ let flags = { entered: false, hasCast: false };
 let place: string | null = null;
 let theme: string | null = null;
 
-const nowNs = () => BigInt(Date.now()) * 1_000_000n;
+const nowNs = (): string => nowNat();
 
 /// Append with a hard cap, dropping oldest first — Memory.append.
 function capped<T>(list: T[], entry: T, cap: number): T[] {
@@ -113,12 +120,12 @@ function cast(question: string) {
     tier === "affirmative" ? AFFIRMATIVE : tier === "negative" ? NEGATIVE : NONCOMMITTAL;
 
   return {
-    id: BigInt(nextId++),
+    id: nat(nextId++),
     question,
-    timestamp: BigInt(Date.now()) * 1_000_000n,
+    timestamp: nowNat(),
     primary,
     relating: relatingLines ? [describe(relatingLines)] : [],
-    changingLines: changingLines.map(BigInt),
+    changingLines: changingLines.map(nat),
     tier: { [tier]: null },
     answer: pool[(Number(primary.number) - 1) % pool.length],
   };
@@ -169,10 +176,10 @@ function dispatch(method: string, args: any[]) {
         case "stats": {
           const count = (t: string) => history.filter((r) => t in r.tier).length;
           return {
-            totalReadings: BigInt(history.length),
-            affirmative: BigInt(count("affirmative")),
-            noncommittal: BigInt(count("noncommittal")),
-            negative: BigInt(count("negative")),
+            totalReadings: nat(history.length),
+            affirmative: nat(count("affirmative")),
+            noncommittal: nat(count("noncommittal")),
+            negative: nat(count("negative")),
           };
         }
         case "journal":
@@ -190,14 +197,14 @@ function dispatch(method: string, args: any[]) {
           const [readingId, movingLines, kameaOrder, cards] = args;
           const order = Number(kameaOrder) < 3 || Number(kameaOrder) > 9 ? 3 : Number(kameaOrder);
           const entry = {
-            readingId: BigInt(readingId),
+            readingId: nat(readingId),
             sealedAt: nowNs(),
-            movingLines: BigInt(movingLines),
+            movingLines: nat(movingLines),
             cards,
-            kameaOrder: BigInt(order),
+            kameaOrder: nat(order),
           };
           seals = capped(
-            seals.filter((s) => s.readingId !== BigInt(readingId)),
+            seals.filter((s) => s.readingId !== nat(readingId)),
             entry,
             MAX.seals,
           );
@@ -208,7 +215,7 @@ function dispatch(method: string, args: any[]) {
           const entry = {
             id: `draw-${nextEntryId++}`,
             drawnAt: nowNs(),
-            movingLines: BigInt(movingLines),
+            movingLines: nat(movingLines),
             cards,
           };
           draws = capped(draws, entry, MAX.draws);
@@ -220,7 +227,7 @@ function dispatch(method: string, args: any[]) {
             id: `sigil-${nextEntryId++}`,
             madeAt: nowNs(),
             phrase: String(phrase).slice(0, 500),
-            movingLines: BigInt(movingLines),
+            movingLines: nat(movingLines),
             overridden,
           };
           sigils = capped(sigils, entry, MAX.sigils);
@@ -252,11 +259,11 @@ function dispatch(method: string, args: any[]) {
         }
         case "shuffle_deck": {
           const [seed] = args;
-          const prevEpoch = deck ? Number(deck.epoch) : 0;
+          const prevEpoch = deck ? Number(Number(deck.epoch)) : 0;
           deck = {
             seed,
-            cursor: 0n,
-            epoch: BigInt(prevEpoch + 1),
+            cursor: nat(0),
+            epoch: nat(prevEpoch + 1),
             shuffledAt: nowNs(),
           };
           return deck;
@@ -266,7 +273,7 @@ function dispatch(method: string, args: any[]) {
           if (cursor > 78 || cursor % 3 !== 0) return false;
           if (!deck) return false;
           if (cursor < Number(deck.cursor)) return false;
-          deck = { ...deck, cursor: BigInt(cursor) };
+          deck = { ...deck, cursor: nat(cursor) };
           return true;
         }
         case "set_entered":

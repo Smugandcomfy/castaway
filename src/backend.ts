@@ -84,12 +84,25 @@ export interface Journal {
 
 const QUERIES = new Set(["journal", "history", "stats"]);
 
+/// Methods whose Candid input is `()`. Unit is `[null]` on this wire, not an
+/// empty array — `apps/kitchensink` calls `read_counter` with `[null]` and
+/// its input type is `()`. An empty array is the wrong arity and the call is
+/// refused.
+const UNIT_INPUT = new Set([
+  "journal",
+  "history",
+  "stats",
+  "clear",
+  "set_entered",
+]);
+
 /// Brokered randomness makes `consult` the one slow call — it awaits
 /// `raw_rand` through the capability before it can answer.
 const TIMEOUTS: Record<string, number> = { consult: 45 };
 
-async function call<T>(method: string, args: unknown[] = []): Promise<T> {
+async function call<T>(method: string, argv: unknown[] = []): Promise<T> {
   const route = QUERIES.has(method) ? querySelf : updateSelf;
+  const args = UNIT_INPUT.has(method) ? [null] : argv;
   const timeout = TIMEOUTS[method];
   const result =
     timeout === undefined
@@ -100,15 +113,19 @@ async function call<T>(method: string, args: unknown[] = []): Promise<T> {
 
 // -------------------------------------------------------------- normalising
 
-const num = (v: bigint | number): number => Number(v);
+/// Motoko `Nat`/`Int` arrive as decimal strings — `SelfCallValue` has no
+/// bigint member, and kitchensink types `read_counter` as `string`.
+const num = (v: string | string | bigint | number): number => Number(v);
 
 /// Canister timestamps are nanoseconds; the browser works in milliseconds.
-const msOf = (v: bigint | number): number =>
-  typeof v === "bigint" ? Number(v / 1_000_000n) : Math.floor(v / 1_000_000);
+const msOf = (v: string | string | bigint | number): number =>
+  typeof v === "bigint"
+    ? Number(v / 1_000_000n)
+    : Math.floor(Number(v) / 1_000_000);
 
 /// Candid `Nat` for a card index arrives as bigint.
 const cardOf = (c: {
-  cardIndex: bigint | number;
+  cardIndex: string | bigint | number;
   reversed: boolean;
   position: string;
 }): SavedCard => ({
@@ -133,32 +150,32 @@ let inflight: Promise<Journal> | null = null;
 async function fetchJournal(): Promise<Journal> {
   const raw = await call<{
     seals: {
-      readingId: bigint | number;
-      sealedAt: bigint | number;
-      movingLines: bigint | number;
-      kameaOrder: bigint | number;
-      cards: { cardIndex: bigint | number; reversed: boolean; position: string }[];
+      readingId: string | bigint | number;
+      sealedAt: string | bigint | number;
+      movingLines: string | bigint | number;
+      kameaOrder: string | bigint | number;
+      cards: { cardIndex: string | bigint | number; reversed: boolean; position: string }[];
     }[];
     draws: {
       id: string;
-      drawnAt: bigint | number;
-      movingLines: bigint | number;
-      cards: { cardIndex: bigint | number; reversed: boolean; position: string }[];
+      drawnAt: string | bigint | number;
+      movingLines: string | bigint | number;
+      cards: { cardIndex: string | bigint | number; reversed: boolean; position: string }[];
     }[];
     sigils: {
       id: string;
-      madeAt: bigint | number;
+      madeAt: string | bigint | number;
       phrase: string;
-      movingLines: bigint | number;
+      movingLines: string | bigint | number;
       overridden: boolean;
     }[];
-    notes: { entryId: string; body: string; updatedAt: bigint | number }[];
+    notes: { entryId: string; body: string; updatedAt: string | bigint | number }[];
     deck:
       | {
           seed: string;
-          cursor: bigint | number;
-          epoch: bigint | number;
-          shuffledAt: bigint | number;
+          cursor: string | bigint | number;
+          epoch: string | bigint | number;
+          shuffledAt: string | bigint | number;
         }[]
       | undefined;
     flags: { entered: boolean; hasCast: boolean };
@@ -236,17 +253,17 @@ export async function seal(input: {
   cards: SavedCard[];
 }): Promise<Seal> {
   const raw = await call<{
-    readingId: bigint | number;
-    sealedAt: bigint | number;
-    movingLines: bigint | number;
-    kameaOrder: bigint | number;
-    cards: { cardIndex: bigint | number; reversed: boolean; position: string }[];
+    readingId: string | bigint | number;
+    sealedAt: string | bigint | number;
+    movingLines: string | bigint | number;
+    kameaOrder: string | bigint | number;
+    cards: { cardIndex: string | bigint | number; reversed: boolean; position: string }[];
   }>("seal", [
-    BigInt(input.readingId),
-    BigInt(input.movingLines),
-    BigInt(input.kameaOrder),
+    String(input.readingId),
+    String(input.movingLines),
+    String(input.kameaOrder),
     input.cards.map((c) => ({
-      cardIndex: BigInt(c.cardIndex),
+      cardIndex: String(c.cardIndex),
       reversed: c.reversed,
       position: c.position,
     })),
@@ -275,13 +292,13 @@ export async function saveDraw(input: {
 }): Promise<Draw> {
   const raw = await call<{
     id: string;
-    drawnAt: bigint | number;
-    movingLines: bigint | number;
-    cards: { cardIndex: bigint | number; reversed: boolean; position: string }[];
+    drawnAt: string | bigint | number;
+    movingLines: string | bigint | number;
+    cards: { cardIndex: string | bigint | number; reversed: boolean; position: string }[];
   }>("save_draw", [
-    BigInt(input.movingLines),
+    String(input.movingLines),
     input.cards.map((c) => ({
-      cardIndex: BigInt(c.cardIndex),
+      cardIndex: String(c.cardIndex),
       reversed: c.reversed,
       position: c.position,
     })),
@@ -303,13 +320,13 @@ export async function saveSigil(input: {
 }): Promise<SigilEntry> {
   const raw = await call<{
     id: string;
-    madeAt: bigint | number;
+    madeAt: string | bigint | number;
     phrase: string;
-    movingLines: bigint | number;
+    movingLines: string | bigint | number;
     overridden: boolean;
   }>("save_sigil", [
     input.phrase,
-    BigInt(input.movingLines),
+    String(input.movingLines),
     input.overridden,
   ]);
   const entry: SigilEntry = {
@@ -373,9 +390,9 @@ export function loadReadings(): Promise<unknown[]> {
 export async function shuffleDeck(seed: string): Promise<DeckState> {
   const raw = await call<{
     seed: string;
-    cursor: bigint | number;
-    epoch: bigint | number;
-    shuffledAt: bigint | number;
+    cursor: string | bigint | number;
+    epoch: string | bigint | number;
+    shuffledAt: string | bigint | number;
   }>("shuffle_deck", [seed]);
   const deck: DeckState = {
     seed: raw.seed,
@@ -390,7 +407,7 @@ export async function shuffleDeck(seed: string): Promise<DeckState> {
 /// Returns false when the canister refused the cursor — it only accepts a
 /// legal resting place for a deck walked three at a time, and never backwards.
 export async function advanceDeck(cursor: number): Promise<boolean> {
-  const ok = await call<boolean>("advance_deck", [BigInt(cursor)]);
+  const ok = await call<boolean>("advance_deck", [String(cursor)]);
   if (ok) {
     patch((j) => ({ ...j, deck: j.deck ? { ...j.deck, cursor } : null }));
   }

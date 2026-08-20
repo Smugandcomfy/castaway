@@ -25,21 +25,28 @@ import "./style.scss";
 
 type Tier = "affirmative" | "noncommittal" | "negative";
 
+/// Motoko `Nat`/`Int` arrive as decimal strings on the self-call wire —
+/// `SelfCallValue` has no bigint member. These were typed `bigint`, so every
+/// `timestamp / 1_000_000n` threw "Cannot mix BigInt and other types" the
+/// moment a real reading came back.
+/// Canister timestamps are nanoseconds, delivered as a decimal string.
+const nsToMs = (ns: string): number => Math.floor(Number(ns) / 1_000_000);
+
 interface HexagramData {
-  lines: bigint[];
-  number: bigint;
+  lines: string[];
+  number: string;
   pinyin: string;
   english: string;
   glyph: string;
 }
 
 interface Reading {
-  id: bigint;
+  id: string;
   question: string;
-  timestamp: bigint;
+  timestamp: string;
   primary: HexagramData;
   relating: HexagramData[]; // Candid opt arrives as [] or [value]
-  changingLines: bigint[];
+  changingLines: string[];
   tier: Record<Tier, null>;
   answer: string;
 }
@@ -117,7 +124,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
     // The square is elected here, at the moment of sealing, from the cast's
     // moving lines and the sign the Moon stood in when the question was
     // asked. Recorded on the seal so the artifact is fixed for good.
-    const castAt = new Date(Number(reading.timestamp / 1_000_000n));
+    const castAt = new Date(nsToMs(reading.timestamp));
     try {
       const entry = await sealCast({
         readingId: Number(reading.id),
@@ -356,7 +363,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
               aria-hidden={!settled}
             >
               {castSkyLine(
-                castSky(new Date(Number(reading.timestamp / 1_000_000n))),
+                castSky(new Date(nsToMs(reading.timestamp))),
               )}
             </p>
 
@@ -476,7 +483,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
                 phrase={reading.question}
                 movingLines={reading.changingLines.length}
                 castTimestamp={
-                  new Date(Number(reading.timestamp / 1_000_000n))
+                  new Date(nsToMs(reading.timestamp))
                 }
                 kameaOrder={sealed.kameaOrder}
                 stampAt={new Date(sealed.sealedAt)}

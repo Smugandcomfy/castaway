@@ -24,21 +24,28 @@ import "./style.scss";
 
 type Tier = "affirmative" | "noncommittal" | "negative";
 
+/// Motoko `Nat`/`Int` arrive as decimal strings on the self-call wire —
+/// `SelfCallValue` has no bigint member. These were typed `bigint`, so every
+/// `timestamp / 1_000_000n` threw "Cannot mix BigInt and other types" the
+/// moment a real reading came back.
+/// Canister timestamps are nanoseconds, delivered as a decimal string.
+const nsToMs = (ns: string): number => Math.floor(Number(ns) / 1_000_000);
+
 interface HexagramData {
-  lines: bigint[];
-  number: bigint;
+  lines: string[];
+  number: string;
   pinyin: string;
   english: string;
   glyph: string;
 }
 
 interface Reading {
-  id: bigint;
+  id: string;
   question: string;
-  timestamp: bigint;
+  timestamp: string;
   primary: HexagramData;
   relating: HexagramData[];
-  changingLines: bigint[];
+  changingLines: string[];
   tier: Record<Tier, null>;
   answer: string;
 }
@@ -123,7 +130,7 @@ export default function History({ goTo }: { goTo: (v: View) => void }) {
     const readings: JournalItem[] = past.map((r) => ({
       kind: "reading",
       id: String(r.id),
-      timestamp: Number(r.timestamp / 1_000_000n),
+      timestamp: nsToMs(r.timestamp),
       reading: r,
     }));
     const tarot: JournalItem[] = tarotEntries.map((e) => ({
@@ -332,7 +339,7 @@ function ReadingRow({
           {seal ? "Sealed cast" : "Reading"}
         </span>
         <span className="ca-journal-time">
-          {formatWhen(Number(reading.timestamp / 1_000_000n))}
+          {formatWhen(nsToMs(reading.timestamp))}
         </span>
       </div>
       <div className="nt-settings-row sf-past-row">
@@ -346,7 +353,7 @@ function ReadingRow({
           <span className="nt-settings-description">{reading.question}</span>
           <span className="ca-cast-sky ca-cast-sky--row">
             {castSkyLine(
-              castSky(new Date(Number(reading.timestamp / 1_000_000n))),
+              castSky(new Date(nsToMs(reading.timestamp))),
             )}
           </span>
         </span>
@@ -384,7 +391,7 @@ function ReadingRow({
                     phrase={reading.question}
                     movingLines={seal.movingLines}
                     castTimestamp={
-                      new Date(Number(reading.timestamp / 1_000_000n))
+                      new Date(nsToMs(reading.timestamp))
                     }
                     kameaOrder={seal.kameaOrder}
                     stampAt={new Date(seal.sealedAt)}
