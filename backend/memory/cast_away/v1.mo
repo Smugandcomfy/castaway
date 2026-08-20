@@ -114,6 +114,11 @@ module {
     hasCast : Bool; // at least one question has been asked, ever
   };
 
+  /// The chosen colour theme: "light" or "dark". Absent means "follow the
+  /// system", which is the first-run default — the frontend reads
+  /// prefers-color-scheme until the reader states a preference.
+  public type Theme = Text;
+
   /// The Sky page's chosen place, by name.
   ///
   /// The name rather than the coordinates, so the place list stays the single
@@ -142,6 +147,7 @@ module {
     var deck : ?Deck;
     var flags : Flags;
     var place : ?PlaceName;
+    var theme : ?Theme;
     /// Supplies ids for draws and sigils. Monotonic, never reused, so a note
     /// can never attach itself to a recycled entry.
     var nextEntryId : Nat;
@@ -158,6 +164,7 @@ module {
       var deck = null;
       var flags = { entered = false; hasCast = false };
       var place = null;
+      var theme = null;
       var nextEntryId = 1;
     };
   };

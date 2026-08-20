@@ -88,6 +88,7 @@ let notes: any[] = [];
 let deck: any = null;
 let flags = { entered: false, hasCast: false };
 let place: string | null = null;
+let theme: string | null = null;
 
 const nowNs = () => BigInt(Date.now()) * 1_000_000n;
 
@@ -164,6 +165,7 @@ export function createCanisterClient(_id: string) {
             deck: deck ? [deck] : [],
             flags,
             place: place ? [place] : [],
+            theme: theme ? [theme] : [],
           };
         case "seal": {
           const [readingId, movingLines, kameaOrder, cards] = args;
@@ -250,6 +252,9 @@ export function createCanisterClient(_id: string) {
         }
         case "set_entered":
           flags = { ...flags, entered: true };
+          return null;
+        case "set_theme":
+          theme = args[0] === "light" || args[0] === "dark" ? String(args[0]) : null;
           return null;
         case "set_place":
           place = String(args[0] ?? "").slice(0, 120) || null;

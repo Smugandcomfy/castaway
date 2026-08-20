@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Sigil } from "./Sigil";
-import { Nav } from "./Nav";
+import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 import { saveSigil as saveSigilEntry } from "./backend";
 import type { View } from "./App";
@@ -80,30 +80,13 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
   return (
     <main className="nt-app nt-app--fill cast-away">
       <div className="nt-page">
-        <header className="ca-header ca-header--centered">
-          <h1 className="nt-title ca-page-title">CAST AWAY</h1>
-        </header>
 
-        <Nav
-          buttons={[
-            { label: "Oracle", onClick: () => goTo("oracle") },
-            { label: "Tarot", onClick: () => goTo("tarot") },
-            { label: "Sky", onClick: () => goTo("sky") },
-            { label: "Journal", onClick: () => goTo("history") },
-            { label: "FAQ", onClick: () => goTo("faq") },
-            { label: "Home", onClick: () => goTo("home"), variant: "ghost" },
-          ]}
-        />
+        <Masthead current="sigil" goTo={goTo} />
 
         <section className="nt-section sf-sigil-standalone">
-          <header className="nt-section-header">
-            <h2 className="nt-section-heading">Draw a sigil</h2>
-          </header>
-
           <p className="nt-muted sf-tarot__intro">
             Type an intention or a name. Repeated letters are struck; the rest
             traces a path through the presiding planet's magic square.
-            Nothing is saved to the oracle.
           </p>
 
           <div className="nt-field ca-ask-field ca-sigil-field">

@@ -951,6 +951,86 @@
       justify-content: center;
     }
 
+    // The wheel with its four angles at the corners. Each corner holds the
+    // angle nearest the point it marks on the dial — Rising is drawn at the
+    // dial's left, the Midheaven at its top — so the readouts sit beside
+    // their own marks and read clockwise from the top left.
+    .ca-sky-wheel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "tl chart tr"
+        ".  chart ."
+        "bl chart br";
+      align-items: start;
+      gap: 12px 24px;
+      width: 100%;
+    }
+
+    .ca-sky-wheel__chart {
+      grid-area: chart;
+      display: flex;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .ca-sky-angle--tl { grid-area: tl; text-align: right; }
+    .ca-sky-angle--tr { grid-area: tr; text-align: left; }
+    .ca-sky-angle--bl { grid-area: bl; text-align: right; align-self: end; }
+    .ca-sky-angle--br { grid-area: br; text-align: left; align-self: end; }
+
+    .ca-sky-angle__label {
+      font-size: 11px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: var(--nt-text-faint);
+    }
+
+    .ca-sky-angle__value {
+      font-family: Baskerville, "Palatino Linotype", "Book Antiqua", Georgia,
+        serif;
+      font-size: 20px;
+      letter-spacing: 0;
+      color: var(--nt-text-strong);
+      margin-top: 2px;
+    }
+
+    .ca-sky-angle__sub {
+      font-size: 11px;
+      letter-spacing: 0;
+      color: var(--nt-text-muted);
+      margin-top: 2px;
+    }
+
+    // Too narrow to flank the wheel: the dial takes the full width and the
+    // four angles fall into a block beneath it, still in wheel order.
+    @media (max-width: 720px) {
+      .ca-sky-wheel {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+        grid-template-areas:
+          "chart chart"
+          "tl    tr"
+          "bl    br";
+        gap: 16px 12px;
+      }
+
+      .ca-sky-angle--tl,
+      .ca-sky-angle--bl {
+        text-align: left;
+      }
+
+      .ca-sky-angle--tr,
+      .ca-sky-angle--br {
+        text-align: right;
+      }
+
+      .ca-sky-angle__value {
+        font-size: 17px;
+      }
+    }
+
     .ca-skychart {
       display: block;
       height: auto;
@@ -1337,54 +1417,243 @@
   // fight the dark oracle. Planets get individual colors here. Title is
   // embossed via layered text-shadows (no gradients, no remote font).
 
-  // ============================================================ PAPER THEME
+  // ============================================================ THE THEMES
   //
-  // Shared paper palette: applied to the splash always, and to the Oracle
-  // page before a question has been asked. All the colored planet overrides
-  // and design-system token remaps live here so both surfaces are identical.
+  // Light and dark, chosen and remembered — see src/theme.ts for why this
+  // stopped being a state class. `data-ca-theme` is set on <html>, so it
+  // covers anything that escapes the app root.
+  //
+  // The design system ships one palette (dark, 92 tokens) and sets
+  // `color-scheme: dark` on .nt-app. Both themes below therefore have to
+  // state `color-scheme` themselves, or native controls, scrollbars and
+  // focus rings render in the wrong mode. That was a live bug on every light
+  // surface in the app.
 
-  .ca-paper {
-    // Design-system tokens remapped for a light surface. Darkened from the
-    // first pass so muted body text clears WCAG AA (>= 4.5:1 on #efe7d3),
-    // and faint text clears AA large (>= 3:1).
+  :root[data-ca-theme="light"] .nt-app.cast-away,
+  .nt-app.cast-away.ca-paper {
+    color-scheme: light;
+
+    // Surfaces. Darkened from the first pass so muted body text clears
+    // WCAG AA (>= 4.5:1 on #efe7d3) and faint text clears AA large (>= 3:1).
     --nt-bg: #efe7d3;
     --nt-bg-elevated: #f5eedd;
+    --nt-bg-panel: #f5eedd;
+    --nt-panel-bg: #f5eedd;
+    --nt-card-bg: #f5eedd;
+    --nt-bg-soft: #e8dfc7;
+
     --nt-text: #2a2620;
     --nt-text-strong: #1e1a15;
     --nt-text-muted: #4a4030;   // ~7:1 body-text safe
     --nt-text-faint: #6a5f4a;   // ~4.5:1 body-text safe
+    --nt-text-inverse: #f5eedd;
     --nt-accent: #b47a2e;
+    --nt-accent-muted: #e8d8b6;
 
     // Component-facing tokens — the design system reads these directly.
     --nt-input-bg: #f5eedd;
     --nt-input-fg: #2a2620;
     --nt-bg-control: #f5eedd;
     --nt-bg-control-hover: #e6dab8;
+    --nt-bg-control-active: #ddcfa6;
     --nt-line: #b8a97e;
     --nt-line-subtle: #d4c9a5;
+    --nt-line-strong: #9c8d63;
     --nt-line-focus: #7c4b1f;
     --nt-button-bg: #b47a2e;
     --nt-button-fg: #f5eedd;
 
-    background: #efe7d3;
-    color: #2a2620;
+    // Semantic colours, retuned for a light ground. The dark palette's mint
+    // and coral are illegible on paper.
+    --nt-success: #3f7a5c;
+    --nt-success-muted: #cfe3d6;
+    --nt-danger: #9c3f2e;
+    --nt-danger-muted: #f0d4cc;
+    --nt-critical: #8a2f20;
+    --nt-critical-muted: #eec9c1;
+    --nt-warning: #8a6416;
+    --nt-warning-muted: #f0e0b8;
+    --nt-info: #2f6478;
+    --nt-info-muted: #cfe0e6;
+    --nt-alert-success-bg: #ddeade;
+    --nt-alert-danger-bg: #f5dcd5;
+    --nt-alert-warning-bg: #f7e9c6;
+    --nt-alert-info-bg: #dbe8ed;
+
+    // Scrollbars and shadows were never remapped, so a light page still drew
+    // dark furniture around itself.
+    --nt-scrollbar-track: #e8dfc7;
+    --nt-scrollbar-thumb: #c4b48b;
+    --nt-scrollbar-thumb-hover: #ab9a71;
+    --nt-scrollbar-hidden-bg: transparent;
+    --nt-shadow-hairline: inset 0 1px var(--nt-line-subtle);
+    --nt-shadow-raised: 0 12px 32px rgba(60, 48, 24, 0.16);
+    --nt-shadow-focus: 0 0 0 1px rgba(124, 75, 31, 0.35);
+
+    // The reading surface deepens a step once the coins answer — the moment
+    // the app performs something. It stays inside the chosen theme now
+    // rather than swapping palettes out from under the reader.
+    --ca-bg-reading: #e2d6b8;
+
+    background: var(--nt-bg);
+    color: var(--nt-text);
+  }
+
+  :root[data-ca-theme="dark"] .nt-app.cast-away {
+    color-scheme: dark;
+    --ca-bg-reading: #020406;
+
+    background: var(--nt-bg);
+    color: var(--nt-text);
+  }
+
+  // Deepened reading surface. Applied once a reading exists, in either theme.
+  .nt-app.cast-away.ca-reading {
+    background: var(--ca-bg-reading, var(--nt-bg));
   }
 
   // Design-system primary-button hover is a hardcoded mint (#9aebba); wrong
-  // on paper. Override to a deeper bronze so hover feels intentional here.
+  // on paper. A deeper bronze so hover reads as intentional here.
+  :root[data-ca-theme="light"] .cast-away .nt-button:not(:disabled):hover,
   .ca-paper .nt-button:not(:disabled):hover {
     background: #9c661f;
   }
 
-  // Placeholder color on paper (design system's is very faint against light).
+  // Placeholder colour on paper (the design system's is very faint on light).
+  :root[data-ca-theme="light"] .cast-away .nt-input::placeholder,
+  :root[data-ca-theme="light"] .cast-away .nt-textarea::placeholder,
   .ca-paper .nt-input::placeholder,
   .ca-paper .nt-textarea::placeholder {
     color: #8a7f68;
   }
 
-  // Smooth the swap when the Oracle flips paper → dark on question arrival.
+  // Smooth the deepening when the coins answer.
   .nt-app.cast-away {
     transition: background-color 500ms ease, color 500ms ease;
+  }
+
+  // ============================================================ THE MASTHEAD
+  //
+  // Wordmark left, tabs centre, theme toggle right, all inside one panel.
+  // The frame is `--nt-shadow-hairline` — an inset hairline the design system
+  // ships for exactly this — plus a hairline underline. No framing border, so
+  // the tile policy holds, and the bar still reads as embossed.
+
+  .ca-masthead {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    margin: 0 0 24px;
+    background: var(--nt-bg-elevated);
+    border-radius: var(--nt-radius-panel, 4px);
+    box-shadow:
+      var(--nt-shadow-hairline),
+      inset 0 -1px var(--nt-line-subtle);
+  }
+
+  .ca-masthead__mark {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: Baskerville, "Palatino Linotype", "Book Antiqua", Georgia,
+      serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0;
+    color: var(--nt-text-strong);
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .ca-masthead__mark:hover {
+    color: var(--nt-accent);
+  }
+
+  .ca-masthead__tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .ca-tab {
+    appearance: none;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 6px 10px 5px;
+    font-size: 13px;
+    letter-spacing: 0;
+    color: var(--nt-text-muted);
+    border-radius: var(--nt-radius-2, 2px);
+    // Reserve the underline on every tab so nothing shifts when it appears.
+    box-shadow: inset 0 -2px transparent;
+    transition:
+      color 160ms ease,
+      background-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .ca-tab:hover {
+    color: var(--nt-text);
+    background: var(--nt-bg-control-hover);
+  }
+
+  .ca-tab.is-active {
+    color: var(--nt-text-strong);
+    box-shadow: inset 0 -2px var(--nt-accent);
+  }
+
+  .ca-masthead__theme {
+    appearance: none;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 5px;
+    display: inline-flex;
+    color: var(--nt-text-muted);
+    border-radius: var(--nt-radius-2, 2px);
+    flex: 0 0 auto;
+    transition: color 160ms ease, background-color 160ms ease;
+  }
+
+  .ca-masthead__theme:hover {
+    color: var(--nt-accent);
+    background: var(--nt-bg-control-hover);
+  }
+
+  .ca-masthead__theme svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  // Narrow screens: the wordmark keeps the first row, tabs wrap under it and
+  // spread rather than crowding to one edge.
+  @media (max-width: 560px) {
+    .ca-masthead {
+      gap: 8px;
+      padding: 8px 10px;
+    }
+
+    .ca-masthead__tabs {
+      order: 3;
+      flex-basis: 100%;
+      justify-content: space-between;
+      gap: 0;
+    }
+
+    .ca-tab {
+      padding: 6px 6px 5px;
+      font-size: 12px;
+    }
   }
 
   .ca-home {

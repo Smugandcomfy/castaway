@@ -67,6 +67,8 @@ export interface Journal {
   flags: Flags;
   /// The Sky page's chosen place, by name. Null until one is picked.
   place: string | null;
+  /// "light" | "dark", or null while the reader follows their system.
+  theme: string | null;
 }
 
 // ------------------------------------------------------------------ client
@@ -156,6 +158,7 @@ async function fetchJournal(): Promise<Journal> {
       | undefined;
     flags: { entered: boolean; hasCast: boolean };
     place: string[] | undefined;
+    theme: string[] | undefined;
   }>("journal");
 
   const journal: Journal = {
@@ -192,6 +195,7 @@ async function fetchJournal(): Promise<Journal> {
     })),
     flags: raw.flags,
     place: optOf(raw.place, (p) => p),
+    theme: optOf(raw.theme, (t) => t),
   };
 
   cache = journal;
@@ -380,6 +384,16 @@ export async function setEntered(): Promise<void> {
 export async function setPlace(name: string): Promise<void> {
   await call("set_place", [name]);
   patch((j) => ({ ...j, place: name.length === 0 ? null : name }));
+}
+
+/// Remember the colour theme. Anything other than "light" or "dark" returns
+/// the reader to following their system setting.
+export async function setTheme(name: string): Promise<void> {
+  await call("set_theme", [name]);
+  patch((j) => ({
+    ...j,
+    theme: name === "light" || name === "dark" ? name : null,
+  }));
 }
 
 /// `hasCast` is set by the canister inside `consult`, so the frontend never

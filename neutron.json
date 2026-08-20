@@ -32,7 +32,8 @@
         "shuffle_deck",
         "advance_deck",
         "set_entered",
-        "set_place"
+        "set_place",
+        "set_theme"
       ]
     }
   },
@@ -82,6 +83,10 @@
       "async": false
     },
     "set_entered": {
+      "type": "update",
+      "async": false
+    },
+    "set_theme": {
       "type": "update",
       "async": false
     },

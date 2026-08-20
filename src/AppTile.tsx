@@ -5,7 +5,7 @@ import { TarotCard } from "./TarotCard";
 import { Sigil } from "./Sigil";
 import Orrery from "./Orrery";
 import { CoinToss } from "./CoinToss";
-import { Nav } from "./Nav";
+import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 import type { View } from "./App";
 import { draw, newNonce, type DrawnCard } from "./tarot";
@@ -45,7 +45,7 @@ const TIER_LABEL: Record<Tier, string> = {
 const tierOf = (r: Reading) => Object.keys(r.tier)[0] as Tier;
 
 
-export function AppTile({ goTo }: { goTo?: (v: View) => void } = {}) {
+export function AppTile({ goTo }: { goTo: (v: View) => void }) {
   const [client, setClient] = useState<any>(null);
   const [question, setQuestion] = useState("");
   const [reading, setReading] = useState<Reading | null>(null);
@@ -220,29 +220,13 @@ export function AppTile({ goTo }: { goTo?: (v: View) => void } = {}) {
   const showing = transformed && relating ? relating : reading?.primary;
   const settled = revealed === 6;
 
-  const paper = !reading;
-
   return (
     <main
-      className={`nt-app nt-app--fill cast-away${paper ? " ca-paper" : ""}`}
+      className={`nt-app nt-app--fill cast-away${reading ? " ca-reading" : ""}`}
     >
       <div className="nt-page">
-        <header className="ca-header ca-header--centered">
-          <h1 className="nt-title ca-page-title">CAST AWAY</h1>
-        </header>
 
-        {goTo && (
-          <Nav
-            buttons={[
-              { label: "Sigil", onClick: () => goTo("sigil") },
-              { label: "Tarot", onClick: () => goTo("tarot") },
-              { label: "Sky", onClick: () => goTo("sky") },
-              { label: "Journal", onClick: () => goTo("history") },
-              { label: "FAQ", onClick: () => goTo("faq") },
-              { label: "Home", onClick: () => goTo("home"), variant: "ghost" },
-            ]}
-          />
-        )}
+        <Masthead current="oracle" goTo={goTo} />
 
         {/* Pre-question showpiece: the live sky, sized to sit above the ask
             field. Vanishes as soon as a reading exists so it doesn't compete

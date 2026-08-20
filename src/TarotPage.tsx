@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { TarotCard } from "./TarotCard";
-import { Nav } from "./Nav";
+import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 import { DECK, type DrawnCard } from "./tarot";
 import {
@@ -132,20 +132,8 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
   return (
     <main className="nt-app nt-app--fill cast-away">
       <div className="nt-page">
-        <header className="ca-header ca-header--centered">
-          <h1 className="nt-title ca-page-title">CAST AWAY</h1>
-        </header>
 
-        <Nav
-          buttons={[
-            { label: "Oracle", onClick: () => goTo("oracle") },
-            { label: "Sigil", onClick: () => goTo("sigil") },
-            { label: "Sky", onClick: () => goTo("sky") },
-            { label: "Journal", onClick: () => goTo("history") },
-            { label: "FAQ", onClick: () => goTo("faq") },
-            { label: "Home", onClick: () => goTo("home"), variant: "ghost" },
-          ]}
-        />
+        <Masthead current="tarot" goTo={goTo} />
 
         <section className="nt-section sf-tarot">
           <header className="nt-section-header">
@@ -156,12 +144,6 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
               </span>
             )}
           </header>
-
-          <p className="nt-muted sf-tarot__intro">
-            No question and no coins — three cards off the top of your own
-            deck, shuffled once and walked three at a time. Cards do not come
-            back until you shuffle again. Each draw is saved to your journal.
-          </p>
 
           {loading ? (
             <p className="ca-deck-meta">Finding your deck…</p>

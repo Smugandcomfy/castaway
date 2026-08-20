@@ -6,7 +6,7 @@ import {
   SearchMoonPhase,
   SunPosition,
 } from "astronomy-engine";
-import { Nav } from "./Nav";
+import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 import { SkyChart, type ChartBody } from "./SkyChart";
 import { presidingCondition, type PlanetKey } from "./presiding";
@@ -185,13 +185,14 @@ export default function SkyPage({ goTo }: { goTo: (v: View) => void }) {
     [when],
   );
 
-  const angles = useMemo(
-    () => ({
-      asc: ascendantDeg(when, place.lat, place.lon),
-      mc: midheavenDeg(when, place.lon),
-    }),
-    [when, place.lat, place.lon],
-  );
+  /// The four angles. The Descendant and Imum Coeli are simply the opposite
+  /// points, so they cost nothing to show and complete the cross the wheel is
+  /// already drawing.
+  const angles = useMemo(() => {
+    const asc = ascendantDeg(when, place.lat, place.lon);
+    const mc = midheavenDeg(when, place.lon);
+    return { asc, mc, dsc: norm360(asc + 180), ic: norm360(mc + 180) };
+  }, [when, place.lat, place.lon]);
 
   const nodes = useMemo(() => lunarNodesDeg(when), [when]);
 
@@ -238,20 +239,8 @@ export default function SkyPage({ goTo }: { goTo: (v: View) => void }) {
   return (
     <main className="nt-app nt-app--fill cast-away">
       <div className="nt-page">
-        <header className="ca-header ca-header--centered">
-          <h1 className="nt-title ca-page-title">CAST AWAY</h1>
-        </header>
 
-        <Nav
-          buttons={[
-            { label: "Oracle", onClick: () => goTo("oracle") },
-            { label: "Sigil", onClick: () => goTo("sigil") },
-            { label: "Tarot", onClick: () => goTo("tarot") },
-            { label: "Journal", onClick: () => goTo("history") },
-            { label: "FAQ", onClick: () => goTo("faq") },
-            { label: "Home", onClick: () => goTo("home"), variant: "ghost" },
-          ]}
-        />
+        <Masthead current="sky" goTo={goTo} />
 
         <section className="nt-section">
           <header className="nt-section-header">
@@ -325,44 +314,52 @@ export default function SkyPage({ goTo }: { goTo: (v: View) => void }) {
           )}
         </section>
 
+        {/* The wheel with its four angles at the corners — each set nearest
+            the point it marks on the dial, so the labels read as part of the
+            drawing rather than a table under it. */}
         <section className="nt-section ca-sky-chart-section">
-          <SkyChart
-            bodies={chartBodies}
-            ascDeg={angles.asc}
-            mcDeg={angles.mc}
-            placed
-          />
-        </section>
-
-        <section className="nt-section">
-          <header className="nt-section-header">
-            <h2 className="nt-section-heading">The angles</h2>
-          </header>
-          <div className="ca-sky-luminaries">
-            <div className="ca-sky-luminary">
-              <div className="ca-sky-luminary-label">Rising</div>
-              <div className="ca-sky-luminary-body">
+          <div className="ca-sky-wheel">
+            <div className="ca-sky-angle ca-sky-angle--tl">
+              <div className="ca-sky-angle__label">Rising</div>
+              <div className="ca-sky-angle__value">
                 {placeInSign(angles.asc)}
               </div>
-              <div className="ca-sky-luminary-sub">
-                the degree on the eastern horizon
-              </div>
+              <div className="ca-sky-angle__sub">eastern horizon</div>
             </div>
-            <div className="ca-sky-luminary">
-              <div className="ca-sky-luminary-label">Midheaven</div>
-              <div className="ca-sky-luminary-body">
+
+            <div className="ca-sky-angle ca-sky-angle--tr">
+              <div className="ca-sky-angle__label">Midheaven</div>
+              <div className="ca-sky-angle__value">
                 {placeInSign(angles.mc)}
               </div>
-              <div className="ca-sky-luminary-sub">
-                the degree on the meridian
+              <div className="ca-sky-angle__sub">the meridian</div>
+            </div>
+
+            <div className="ca-sky-wheel__chart">
+              <SkyChart
+                bodies={chartBodies}
+                ascDeg={angles.asc}
+                mcDeg={angles.mc}
+                placed
+              />
+            </div>
+
+            <div className="ca-sky-angle ca-sky-angle--bl">
+              <div className="ca-sky-angle__label">Imum Coeli</div>
+              <div className="ca-sky-angle__value">
+                {placeInSign(angles.ic)}
               </div>
+              <div className="ca-sky-angle__sub">lowest point</div>
+            </div>
+
+            <div className="ca-sky-angle ca-sky-angle--br">
+              <div className="ca-sky-angle__label">Setting</div>
+              <div className="ca-sky-angle__value">
+                {placeInSign(angles.dsc)}
+              </div>
+              <div className="ca-sky-angle__sub">western horizon</div>
             </div>
           </div>
-          <p className="nt-muted ca-sky-note">
-            These two are the only things on this page that depend on where you
-            are. Every longitude below is the same for every observer on Earth;
-            the horizon is not.
-          </p>
         </section>
 
         <section className="nt-section ca-sky-luminaries">

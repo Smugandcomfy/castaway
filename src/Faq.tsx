@@ -1,5 +1,5 @@
 import type { View } from "./App";
-import { Nav } from "./Nav";
+import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 
 /// Technical documentation of the whole pipeline. Every constant,
@@ -10,23 +10,8 @@ export default function Faq({ goTo }: { goTo: (v: View) => void }) {
   return (
     <main className="nt-app nt-app--fill cast-away">
       <div className="nt-page">
-        <header className="ca-header ca-header--centered">
-          <h1 className="nt-title ca-page-title">CAST AWAY</h1>
-          <p className="nt-subtitle ca-tagline">
-            The math behind every reading.
-          </p>
-        </header>
 
-        <Nav
-          buttons={[
-            { label: "← Back", onClick: () => goTo("oracle") },
-            { label: "Sigil", onClick: () => goTo("sigil") },
-            { label: "Tarot", onClick: () => goTo("tarot") },
-            { label: "Sky", onClick: () => goTo("sky") },
-            { label: "Journal", onClick: () => goTo("history") },
-            { label: "Home", onClick: () => goTo("home"), variant: "ghost" },
-          ]}
-        />
+        <Masthead current="faq" goTo={goTo} />
 
         <div className="ca-faq">
           <section className="ca-faq-item">

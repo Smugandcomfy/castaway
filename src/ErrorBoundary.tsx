@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!this.state.error) return this.props.children;
     return (
       <main
-        className="nt-app nt-app--fill cast-away ca-paper"
+        className="nt-app nt-app--fill cast-away"
         style={{
           minHeight: "100vh",
           display: "flex",

@@ -1,6 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Home from "./Home";
-import { loadJournal, setEntered } from "./backend";
+import { loadJournal, setEntered, setTheme } from "./backend";
+import { ThemeContext } from "./Masthead";
+import {
+  applyTheme,
+  nextTheme,
+  resolveTheme,
+  systemTheme,
+  watchSystemTheme,
+  type Theme,
+  type ThemeChoice,
+} from "./theme";
 import { AppTile } from "./AppTile";
 import Faq from "./Faq";
 import History from "./History";
@@ -71,11 +81,23 @@ export default function App() {
   /// lives in managed memory — a tile has no browser storage to keep it in.
   const [view, setView] = useState<View | null>(viewFromHash);
 
+  /// Null means "follow the system". The preference lives on the canister,
+  /// so it cannot be known synchronously — the system setting applies until
+  /// the journal answers, which is also the first-run default, so the common
+  /// case is right immediately and never flashes.
+  const [themeChoice, setThemeChoice] = useState<ThemeChoice>(null);
+  const [theme, setResolvedTheme] = useState<Theme>(() => {
+    const t = systemTheme();
+    applyTheme(null);
+    return t;
+  });
+
   useEffect(() => {
     if (view !== null) return;
     let live = true;
     void loadJournal().then((j) => {
-      if (live) setView(j.flags.entered ? "oracle" : "home");
+      if (!live) return;
+      setView(j.flags.entered ? "oracle" : "home");
     });
     return () => {
       live = false;
@@ -83,6 +105,39 @@ export default function App() {
     // Runs once, on the first render where no hash decided the view.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    let live = true;
+    void loadJournal().then((j) => {
+      if (!live) return;
+      const stored: ThemeChoice =
+        j.theme === "light" || j.theme === "dark" ? j.theme : null;
+      setThemeChoice(stored);
+      setResolvedTheme(applyTheme(stored));
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  // Track the machine only while no explicit choice has been made.
+  useEffect(
+    () => watchSystemTheme(themeChoice, setResolvedTheme),
+    [themeChoice],
+  );
+
+  const themeControl = useMemo(
+    () => ({
+      theme,
+      toggle: () => {
+        const next = nextTheme(themeChoice);
+        setThemeChoice(next);
+        setResolvedTheme(applyTheme(next));
+        void setTheme(next);
+      },
+    }),
+    [theme, themeChoice],
+  );
 
   // Reflect view in the URL so pages are shareable and the back button works.
   useEffect(() => {
@@ -118,11 +173,24 @@ export default function App() {
   // better than flashing the splash at someone who passed it months ago.
   if (view === null) return null;
 
-  if (view === "home") return <Home onEnter={enter} />;
-  if (view === "faq") return <Faq goTo={setView} />;
-  if (view === "history") return <History goTo={setView} />;
-  if (view === "tarot") return <TarotPage goTo={setView} />;
-  if (view === "sigil") return <SigilPage goTo={setView} />;
-  if (view === "sky") return <SkyPage goTo={setView} />;
-  return <AppTile goTo={setView} />;
+  const page =
+    view === "home" ? (
+      <Home onEnter={enter} />
+    ) : view === "faq" ? (
+      <Faq goTo={setView} />
+    ) : view === "history" ? (
+      <History goTo={setView} />
+    ) : view === "tarot" ? (
+      <TarotPage goTo={setView} />
+    ) : view === "sigil" ? (
+      <SigilPage goTo={setView} />
+    ) : view === "sky" ? (
+      <SkyPage goTo={setView} />
+    ) : (
+      <AppTile goTo={setView} />
+    );
+
+  return (
+    <ThemeContext.Provider value={themeControl}>{page}</ThemeContext.Provider>
+  );
 }

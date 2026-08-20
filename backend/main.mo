@@ -119,6 +119,7 @@ module {
         deck = mem.deck;
         flags = mem.flags;
         place = mem.place;
+        theme = mem.theme;
       };
     };
 
@@ -230,6 +231,13 @@ module {
       mem.flags := { mem.flags with entered = true };
     };
 
+    /// Remember the colour theme. Only "light" and "dark" are accepted;
+    /// anything else clears the preference and returns the reader to
+    /// following their system setting.
+    public func /*update*/ set_theme(name : Text) : () {
+      mem.theme := if (name == "light" or name == "dark") ?name else null;
+    };
+
     /// Remember which place the Sky page is reading from. Stored by name, so
     /// the frontend's place list remains the authority on coordinates.
     public func /*update*/ set_place(name : Text) : () {
@@ -248,8 +256,9 @@ module {
       mem.notes := [];
       mem.deck := null;
       mem.flags := { entered = mem.flags.entered; hasCast = false };
-      // The chosen place is a preference, not history: clearing the journal
-      // should not make the Sky page forget where the reader lives.
+      // The chosen place and theme are preferences, not history: clearing the
+      // journal should not reset how the app looks or forget where the reader
+      // lives.
     };
 
     /// Text arrives from a single trusted owner, but bounded storage is a
@@ -304,6 +313,9 @@ public type advance_deck_Output = Bool;
 
 public type set_entered_Input = ();
 public type set_entered_Output = ();
+
+public type set_theme_Input = (name : Text);
+public type set_theme_Output = ();
 
 public type set_place_Input = (name : Text);
 public type set_place_Output = ();

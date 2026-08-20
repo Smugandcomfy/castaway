@@ -17,6 +17,7 @@ module {
   public type Deck = Memory.Deck;
   public type Flags = Memory.Flags;
   public type PlaceName = Memory.PlaceName;
+  public type Theme = Memory.Theme;
 
   /// Everything the journal, the Tarot page, and the splash need, in one
   /// query. A tile has no browser storage, so this runs on essentially every
@@ -29,6 +30,7 @@ module {
     deck : ?Deck;
     flags : Flags;
     place : ?PlaceName;
+    theme : ?Theme;
   };
 
   /// Not persisted -- computed on the fly by stats().

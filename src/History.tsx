@@ -3,7 +3,7 @@ import { createCanisterClient, loadNeutronCanisterId } from "neutron-tools/app";
 import { Hexagram } from "./Hexagram";
 import { Sigil } from "./Sigil";
 import { TarotCard } from "./TarotCard";
-import { Nav } from "./Nav";
+import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 import { NoteEditor } from "./NoteEditor";
 import type { View } from "./App";
@@ -185,20 +185,8 @@ export default function History({ goTo }: { goTo: (v: View) => void }) {
   return (
     <main className="nt-app nt-app--fill cast-away">
       <div className="nt-page">
-        <header className="ca-header ca-header--centered">
-          <h1 className="nt-title ca-page-title">CAST AWAY</h1>
-        </header>
 
-        <Nav
-          buttons={[
-            { label: "← Back", onClick: () => goTo("oracle") },
-            { label: "Sigil", onClick: () => goTo("sigil") },
-            { label: "Tarot", onClick: () => goTo("tarot") },
-            { label: "Sky", onClick: () => goTo("sky") },
-            { label: "FAQ", onClick: () => goTo("faq") },
-            { label: "Home", onClick: () => goTo("home"), variant: "ghost" },
-          ]}
-        />
+        <Masthead current="history" goTo={goTo} />
 
         <section className="nt-section">
           <header className="nt-section-header">
