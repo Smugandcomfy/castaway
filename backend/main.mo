@@ -181,7 +181,7 @@ module {
         return #refused("Ask a question first.");
       };
       if (Text.encodeUtf8(trimmed).size() > MAX_QUESTION_BYTES) {
-        return #refused("Keep the question under 500 characters.");
+        return #refused("Keep the question under 500 bytes.");
       };
 
       switch (await* entropy.fresh_bytes()) {
@@ -189,6 +189,7 @@ module {
           let result = Cast.reading(mem.nextId, trimmed, bytes, Time.now());
           mem.nextId += 1;
           mem.readings := Memory.append<Reading>(mem.readings, result, MAX_HISTORY);
+          pruneOrphans();
           mem.flags := { mem.flags with hasCast = true };
           #reading(result);
         };
@@ -249,7 +250,14 @@ module {
     /// Seal a cast: the sigil has been drawn, so the pull is now fixed. One
     /// seal per reading -- sealing again replaces it rather than accumulating,
     /// which keeps "the cards this cast kept" a single answer.
-    public func /*update*/ seal(readingId : Nat, movingLines : Nat, kameaOrder : Nat, cards : [Card]) : Seal {
+    ///
+    /// Null when there is no such reading. A seal is meaningless on its own:
+    /// it names a reading, and if that reading was never cast -- or has already
+    /// rolled off the end of the history -- then storing the seal would put a
+    /// row in the journal that renders against nothing. Refusing is the only
+    /// honest answer, and the caller gets to say so.
+    public func /*update*/ seal(readingId : Nat, movingLines : Nat, kameaOrder : Nat, cards : [Card]) : ?Seal {
+      if (not hasReading(readingId)) return null;
       // 3..9 are the seven classical squares; anything else is a caller bug
       // and is clamped rather than stored, so no seal can name a square that
       // does not exist.
@@ -263,7 +271,7 @@ module {
       };
       let others = Array.filter<Seal>(mem.seals, func(s) { s.readingId != readingId });
       mem.seals := Memory.append<Seal>(others, entry, MAX_SEALS);
-      entry;
+      ?entry;
     };
 
     /// A draw made on the Tarot page, with no question behind it.
@@ -337,15 +345,30 @@ module {
     /// Advance the cursor after a draw. Refuses anything that is not a legal
     /// resting place for a deck walked three at a time, so a malformed call
     /// cannot leave the deck in a state the page can never draw from again.
-    public func /*update*/ advance_deck(cursor : Nat) : Bool {
-      if (cursor > DECK_SIZE or cursor % DRAW_SIZE != 0) return false;
+    /// Null when the move is refused, otherwise the deck as it now stands.
+    ///
+    /// The epoch is the whole point of the argument. Without it the only test
+    /// was `cursor >= d.cursor`, and a tab still holding pre-shuffle state
+    /// could call `advance_deck(9)` after another tab reshuffled: nine is not
+    /// less than zero, so the fresh deck jumped to position nine and three
+    /// cards nobody ever saw were spent. A comment here used to claim the epoch
+    /// made that impossible; it was never checked.
+    ///
+    /// Returning the deck rather than a bool means a refused caller can see
+    /// what the truth is instead of having to go and ask for it.
+    public func /*update*/ advance_deck(epoch : Nat, cursor : Nat) : ?Deck {
+      if (cursor > DECK_SIZE or cursor % DRAW_SIZE != 0) return null;
       switch (mem.deck) {
         case (?d) {
-          if (cursor < d.cursor) return false; // the deck never walks backwards
-          mem.deck := ?{ d with cursor };
-          true;
+          if (epoch != d.epoch) return null; // a caller holding an older deck
+          // Exactly one draw at a time, or standing still: a retry after a
+          // dropped reply must succeed, and nothing may skip cards.
+          if (cursor != d.cursor and cursor != d.cursor + DRAW_SIZE) return null;
+          let next = { d with cursor };
+          mem.deck := ?next;
+          ?next;
         };
-        case null false;
+        case null null;
       };
     };
 
@@ -409,6 +432,27 @@ module {
       );
     };
 
+    func hasReading(id : Nat) : Bool {
+      Array.find<Reading>(mem.readings, func(r) { r.id == id }) != null;
+    };
+
+    /// Readings roll off oldest-first once the history is full. Anything that
+    /// points at one that has gone -- its seal, its note -- would render against
+    /// nothing, so it goes with it. Standalone draw and sigil notes are keyed by
+    /// a prefixed id and are none of this function's business.
+    func pruneOrphans() {
+      mem.seals := Array.filter<Seal>(mem.seals, func(s) { hasReading(s.readingId) });
+      mem.notes := Array.filter<Note>(
+        mem.notes,
+        func(n) {
+          switch (Nat.fromText(n.entryId)) {
+            case (?id) hasReading(id);
+            case null true;
+          };
+        },
+      );
+    };
+
     /// A moving-line count is 0..6 and a `Nat` is arbitrary precision, so an
     /// unguarded one is a multi-kilobyte bignum in every reply that returns it.
     func boundMovingLines(n : Nat) : Nat = if (n > 6) 0 else n;
@@ -449,7 +493,7 @@ public type journal_Input = ();
 public type journal_Output = Journal;
 
 public type seal_Input = (readingId : Nat, movingLines : Nat, kameaOrder : Nat, cards : [Card]);
-public type seal_Output = Seal;
+public type seal_Output = ?Seal;
 
 public type save_draw_Input = (movingLines : Nat, cards : [Card]);
 public type save_draw_Output = Draw;
@@ -466,8 +510,8 @@ public type delete_entry_Output = ();
 public type shuffle_deck_Input = (seed : Text);
 public type shuffle_deck_Output = Deck;
 
-public type advance_deck_Input = (cursor : Nat);
-public type advance_deck_Output = Bool;
+public type advance_deck_Input = (epoch : Nat, cursor : Nat);
+public type advance_deck_Output = ?Deck;
 
 public type set_entered_Input = ();
 public type set_entered_Output = ();

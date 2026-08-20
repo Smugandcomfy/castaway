@@ -64,11 +64,13 @@ if (schema === null) {
 /// `prefixItems` (a tuple) or `items` (a vector), the scalar types, and `oneOf`
 /// for a variant. That is the whole vocabulary, so this is the whole validator.
 function validate(value: unknown, s: Schema, path = "$"): string[] {
-  if (s.oneOf) {
-    const tries = s.oneOf.map((branch: Schema) => validate(value, branch, path));
+  // `oneOf` is a Candid variant; `anyOf` is how a top-level `?T` is written.
+  const branches: Schema[] | undefined = s.oneOf ?? s.anyOf;
+  if (branches) {
+    const tries = branches.map((branch: Schema) => validate(value, branch, path));
     return tries.some((errs: string[]) => errs.length === 0)
       ? []
-      : [`${path}: matched none of the ${s.oneOf.length} variant arms`];
+      : [`${path}: matched none of the ${branches.length} branches`];
   }
   switch (s.type) {
     case "object": {
@@ -139,6 +141,13 @@ function shapeOf(value: unknown): string {
 /// the ones absent from `required` — are present or omitted.
 function sample(s: Schema, full: boolean): unknown {
   if (s.oneOf) return sample(s.oneOf[0], full);
+  // A top-level `?T` is `anyOf: [T, null]`. Take the value on the run where
+  // optionals are present and the absence on the run where they are not, so
+  // both halves of every nullable reply get decoded by something.
+  if (s.anyOf) {
+    const present = s.anyOf.find((b: Schema) => b.type !== "null");
+    return full && present ? sample(present, full) : null;
+  }
   switch (s.type) {
     case "object": {
       const out: Record<string, unknown> = {};
@@ -208,7 +217,7 @@ const CALLS: { method: string; run: () => Promise<unknown> }[] = [
   { method: "set_note", run: () => backend.setNote("draw-1", "a note") },
   { method: "delete_entry", run: () => backend.deleteEntry("draw-1") },
   { method: "shuffle_deck", run: () => backend.shuffleDeck("seed") },
-  { method: "advance_deck", run: () => backend.advanceDeck(3) },
+  { method: "advance_deck", run: () => backend.advanceDeck(1, 3) },
   { method: "set_entered", run: () => backend.setEntered() },
   { method: "set_place", run: () => backend.setPlace("Kyoto") },
   { method: "set_theme", run: () => backend.setTheme("dark") },

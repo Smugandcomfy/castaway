@@ -25,8 +25,10 @@ export interface DeckStore {
   /// Mint a new epoch from this seed. The store owns the epoch number and the
   /// timestamp, so a caller cannot rewrite either.
   shuffle(seed: string): Promise<DeckState>;
-  /// Move the cursor after a draw. False if the position was refused.
-  advance(cursor: number): Promise<boolean>;
+  /// Move the cursor after a draw. Null if the move was refused — a stale
+  /// epoch, a skipped draw, a cursor that is not a resting place. On success
+  /// the deck as the store now holds it, which is the authority.
+  advance(epoch: number, cursor: number): Promise<DeckState | null>;
 }
 
 export function canisterDeckStore(): DeckStore {
@@ -38,7 +40,7 @@ export function canisterDeckStore(): DeckStore {
       return journal.deck && validateState(journal.deck) ? journal.deck : null;
     },
     shuffle: (seed) => shuffleDeck(seed),
-    advance: (cursor) => advanceDeck(cursor),
+    advance: (epoch, cursor) => advanceDeck(epoch, cursor),
   };
 }
 
@@ -58,12 +60,14 @@ export function memoryDeckStore(initial: DeckState | null = null): DeckStore {
       deck = next;
       return next;
     },
-    async advance(cursor) {
-      if (cursor > 78 || cursor % 3 !== 0) return false;
-      if (deck === null) return false;
-      if (cursor < deck.cursor) return false; // the deck never walks backwards
+    async advance(epoch, cursor) {
+      if (cursor > 78 || cursor % 3 !== 0) return null;
+      if (deck === null) return null;
+      if (epoch !== deck.epoch) return null; // a caller holding an older deck
+      // One draw at a time, or standing still so a retry succeeds.
+      if (cursor !== deck.cursor && cursor !== deck.cursor + 3) return null;
       deck = { ...deck, cursor };
-      return true;
+      return deck;
     },
   };
 }

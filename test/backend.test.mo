@@ -51,6 +51,39 @@ func repeat(unit : Text, n : Nat) : Text {
   out;
 };
 
+/// Put a reading in the store.
+///
+/// `consult` is the only method that mints one, and it is `async*` because
+/// brokered entropy is an await -- which has no legal home in a wasi test
+/// program. Memory is structurally typed and the test holds it, so a reading
+/// can be placed directly. Everything that *points* at a reading is testable
+/// this way even though the thing that creates one is not.
+func addReading(mem : Memory.Mem, id : Nat) {
+  let hexagram : Memory.Hexagram = {
+    lines = [7, 7, 7, 7, 7, 7];
+    number = 1;
+    pinyin = "qian";
+    english = "The Creative";
+    glyph = "\u{4DC0}";
+  };
+  let r : Memory.Reading = {
+    id;
+    question = "a question";
+    timestamp = 0;
+    primary = hexagram;
+    relating = null;
+    changingLines = [];
+    tier = #affirmative;
+    answer = "yes";
+  };
+  mem.readings := Array.concat<Memory.Reading>(mem.readings, [r]);
+};
+
+/// The seal, or a trap naming what was expected.
+func sealed(s : ?Main.Seal, what : Text) : Main.Seal {
+  switch (s) { case (?v) v; case null Runtime.trap("FAILED: " # what) };
+};
+
 func card(i : Nat) : Main.Card {
   { cardIndex = i; reversed = false; position = "past" };
 };
@@ -74,10 +107,13 @@ do {
 // a deck that has walked past a position it can never draw from again is a
 // deck the reader has to reshuffle to escape.
 
+/// True when the deck was moved; the method returns the deck it now holds.
+func advanced(d : ?Main.Deck) : Bool = d != null;
+
 do {
   let (app, _) = fresh();
 
-  check("advance is refused when no deck exists", app.advance_deck(3) == false);
+  check("advance is refused when no deck exists", not advanced(app.advance_deck(1, 3)));
 
   let d1 = app.shuffle_deck("seed-one");
   check("first shuffle is epoch 1", d1.epoch == 1);
@@ -88,37 +124,53 @@ do {
   check("the epoch advances on every shuffle", d2.epoch == 2);
   check("reshuffling returns the cursor to the top", d2.cursor == 0);
 
-  // Legal walk.
-  check("advance to 3 is accepted", app.advance_deck(3));
-  check("advance to 6 is accepted", app.advance_deck(6));
-  check("advance to the same place is accepted", app.advance_deck(6));
+  // Legal walk: one draw at a time, and standing still is allowed so a retry
+  // after a dropped reply succeeds rather than wedging the page.
+  switch (app.advance_deck(2, 3)) {
+    case (?d) check("advance one draw is accepted, and returns the deck", d.cursor == 3 and d.epoch == 2);
+    case null Runtime.trap("FAILED: advance one draw was refused");
+  };
+  check("advance another draw is accepted", advanced(app.advance_deck(2, 6)));
+  check("advancing to the same place is accepted", advanced(app.advance_deck(2, 6)));
 
   // Illegal walks. Each must leave the cursor where it was.
-  check("a cursor that is not a multiple of three is refused", app.advance_deck(7) == false);
-  check("a cursor past the end of the deck is refused", app.advance_deck(81) == false);
-  check("the deck never walks backwards", app.advance_deck(3) == false);
+  check("a cursor that is not a multiple of three is refused", not advanced(app.advance_deck(2, 7)));
+  check("a cursor past the end of the deck is refused", not advanced(app.advance_deck(2, 81)));
+  check("the deck never walks backwards", not advanced(app.advance_deck(2, 3)));
+  check("the deck never skips a draw", not advanced(app.advance_deck(2, 12)));
 
-  let after = app.journal();
-  switch (after.deck) {
-    case (?d) check("a refused advance leaves the cursor untouched", d.cursor == 6);
+  // The epoch is what stops a stale tab spending a deck it has never seen.
+  check("an older epoch is refused", not advanced(app.advance_deck(1, 9)));
+  check("a newer epoch is refused", not advanced(app.advance_deck(3, 9)));
+
+  switch (app.journal().deck) {
+    case (?d) check("every refused advance left the cursor untouched", d.cursor == 6);
     case null Runtime.trap("FAILED: the deck vanished");
   };
 
-  check("the last legal resting place is the full deck", app.advance_deck(78));
+  // Walk it out to the end one draw at a time.
+  var at = 6;
+  while (at < 78) {
+    at += 3;
+    check("the walk reaches " # Nat.toText(at), advanced(app.advance_deck(2, at)));
+  };
   switch (app.journal().deck) {
     case (?d) check("an exhausted deck rests at 78", d.cursor == 78);
     case null Runtime.trap("FAILED: the deck vanished");
   };
+  check("an exhausted deck cannot be advanced further", not advanced(app.advance_deck(2, 81)));
 
   // A shuffle after exhaustion is the way out, and it must reset the cursor.
   let d3 = app.shuffle_deck("seed-three");
   check("shuffling an exhausted deck frees it", d3.cursor == 0 and d3.epoch == 3);
+  check("the pre-shuffle epoch is now refused", not advanced(app.advance_deck(2, 3)));
+  check("the new epoch works", advanced(app.advance_deck(3, 3)));
 };
 
 // ------------------------------------------------------------------- draws
 
 do {
-  let (app, _) = fresh();
+  let (app, mem) = fresh();
 
   let a = app.save_draw(2, [card(0), card(1), card(2)]);
   check("a draw is given a prefixed id", a.id == "draw-1");
@@ -137,7 +189,8 @@ do {
   check("a draw keeps at most a pull's worth of cards", wide.cards.size() == 3);
   check("the cards it keeps are the first three", wide.cards[0].cardIndex == 0 and wide.cards[2].cardIndex == 2);
 
-  let wideSeal = app.seal(1, 0, 3, Array.tabulate<Main.Card>(40, func(i) { card(i) }));
+  addReading(mem, 1);
+  let wideSeal = sealed(app.seal(1, 0, 3, Array.tabulate<Main.Card>(40, func(i) { card(i) })), "seal");
   check("a seal is bounded the same way", wideSeal.cards.size() == 3);
 };
 
@@ -184,16 +237,17 @@ do {
 // cards this cast kept" stops having a single answer.
 
 do {
-  let (app, _) = fresh();
+  let (app, mem) = fresh();
+  for (id in [1, 2, 3, 4, 5, 7, 8].vals()) { addReading(mem, id) };
 
-  let first = app.seal(7, 2, 5, [card(1)]);
+  let first = sealed(app.seal(7, 2, 5, [card(1)]), "reading 7 could not be sealed");
   check("a seal keeps its reading id", first.readingId == 7);
   check("a valid kamea order is kept", first.kameaOrder == 5);
 
   ignore app.seal(8, 1, 6, [card(2)]);
   check("seals for different readings accumulate", app.journal().seals.size() == 2);
 
-  let again = app.seal(7, 3, 9, [card(3), card(4)]);
+  let again = sealed(app.seal(7, 3, 9, [card(3), card(4)]), "reading 7 could not be resealed");
   check("resealing a reading replaces its seal", app.journal().seals.size() == 2);
   check("the replacement is the one that survives", again.cards.size() == 2);
 
@@ -201,12 +255,20 @@ do {
   check("exactly one seal per reading", survivors.size() == 1);
   check("the surviving seal is the newest", survivors[0].kameaOrder == 9);
 
+  // A seal names a reading. Without one there is nothing for it to mean, and
+  // storing it would put a row in the journal that renders against nothing.
+  check("sealing a reading that does not exist is refused", app.seal(9999, 0, 3, []) == null);
+  check("a refused seal stores nothing", app.journal().seals.size() == 2);
+
   // Only 3..9 name a classical square; anything else is clamped rather than
   // stored, so no seal can point at a square that does not exist.
-  check("a kamea order below three is clamped", app.seal(1, 0, 2, []).kameaOrder == 3);
-  check("a kamea order above nine is clamped", app.seal(2, 0, 10, []).kameaOrder == 3);
-  check("zero is clamped", app.seal(3, 0, 0, []).kameaOrder == 3);
-  check("the boundaries themselves are kept", app.seal(4, 0, 3, []).kameaOrder == 3 and app.seal(5, 0, 9, []).kameaOrder == 9);
+  check("a kamea order below three is clamped", sealed(app.seal(1, 0, 2, []), "1").kameaOrder == 3);
+  check("a kamea order above nine is clamped", sealed(app.seal(2, 0, 10, []), "2").kameaOrder == 3);
+  check("zero is clamped", sealed(app.seal(3, 0, 0, []), "3").kameaOrder == 3);
+  check(
+    "the boundaries themselves are kept",
+    sealed(app.seal(4, 0, 3, []), "4").kameaOrder == 3 and sealed(app.seal(5, 0, 9, []), "5").kameaOrder == 9,
+  );
 };
 
 // ------------------------------------------------------------------- notes
@@ -275,8 +337,10 @@ do {
 };
 
 do {
-  let (app, _) = fresh();
-  // Distinct reading ids, or the replace-by-reading rule caps it at one.
+  let (app, mem) = fresh();
+  // Distinct reading ids, or the replace-by-reading rule caps it at one -- and
+  // each needs a reading to point at, or the seal is refused outright.
+  for (i in Nat.range(0, 50)) { addReading(mem, i) };
   for (i in Nat.range(0, 50)) { ignore app.seal(i, 0, 3, []) };
   check("seals are capped", app.journal().seals.size() == 40);
 };
@@ -295,7 +359,8 @@ do {
 // never load again, with no way back except wiping everything.
 
 do {
-  let (app, _) = fresh();
+  let (app, mem) = fresh();
+  addReading(mem, 1);
 
   let fat = repeat("q", 10_000);
 
@@ -313,7 +378,7 @@ do {
   check("a note's entry id is bounded", Text.encodeUtf8(app.journal().notes[0].entryId).size() == 64);
 
   check("an impossible moving-line count is dropped on a draw", app.save_draw(99, []).movingLines == 0);
-  check("an impossible moving-line count is dropped on a seal", app.seal(1, 99, 3, []).movingLines == 0);
+  check("an impossible moving-line count is dropped on a seal", sealed(app.seal(1, 99, 3, []), "seal").movingLines == 0);
 };
 
 // --------------------------------------------------- whitespace is not text

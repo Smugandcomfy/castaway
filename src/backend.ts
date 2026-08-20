@@ -273,19 +273,21 @@ function patch(f: (j: Journal) => Journal): void {
 
 // ------------------------------------------------------------------ writing
 
+/// Fix a cast's pull. Null when the canister has no such reading — a seal names
+/// one, and it will not store a row that renders against nothing.
 export async function seal(input: {
   readingId: number;
   movingLines: number;
   kameaOrder: number;
   cards: SavedCard[];
-}): Promise<Seal> {
+}): Promise<Seal | null> {
   const raw = await call<{
     readingId: string | bigint | number;
     sealedAt: string | bigint | number;
     movingLines: string | bigint | number;
     kameaOrder: string | bigint | number;
     cards: { cardIndex: string | bigint | number; reversed: boolean; position: string }[];
-  }>("seal", [
+  } | null>("seal", [
     String(input.readingId),
     String(input.movingLines),
     String(input.kameaOrder),
@@ -295,6 +297,7 @@ export async function seal(input: {
       position: c.position,
     })),
   ]);
+  if (raw === null) return null;
 
   const entry: Seal = {
     readingId: num(raw.readingId),
@@ -446,12 +449,32 @@ export async function shuffleDeck(seed: string): Promise<DeckState> {
 
 /// Returns false when the canister refused the cursor — it only accepts a
 /// legal resting place for a deck walked three at a time, and never backwards.
-export async function advanceDeck(cursor: number): Promise<boolean> {
-  const ok = await call<boolean>("advance_deck", String(cursor));
-  if (ok) {
-    patch((j) => ({ ...j, deck: j.deck ? { ...j.deck, cursor } : null }));
-  }
-  return ok;
+/// Move the cursor after a draw. Null when the move was refused.
+///
+/// The epoch travels with the cursor. Without it the canister's only test was
+/// "not backwards", so a tab still holding a pre-shuffle deck could advance a
+/// freshly shuffled one and spend cards nobody ever saw. On success the
+/// canister returns the deck it now holds, which is the authority — the client
+/// no longer patches a guess into its own cache.
+export async function advanceDeck(
+  epoch: number,
+  cursor: number,
+): Promise<DeckState | null> {
+  const raw = await call<{
+    seed: string;
+    cursor: string | bigint | number;
+    epoch: string | bigint | number;
+    shuffledAt: string | bigint | number;
+  } | null>("advance_deck", [String(epoch), String(cursor)]);
+  if (raw === null) return null;
+  const deck: DeckState = {
+    seed: raw.seed,
+    cursor: num(raw.cursor),
+    epoch: num(raw.epoch),
+    shuffledAt: msOf(raw.shuffledAt),
+  };
+  patch((j) => ({ ...j, deck }));
+  return deck;
 }
 
 // -------------------------------------------------------------------- flags

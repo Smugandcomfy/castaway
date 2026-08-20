@@ -209,12 +209,30 @@ describe("storage", () => {
 
   test("the cursor only lands where a deck walked by threes can rest", async () => {
     const store = memoryDeckStore();
-    await store.shuffle(testSeed(5));
-    expect(await store.advance(3)).toBe(true);
-    expect(await store.advance(4)).toBe(false); // not a multiple of three
-    expect(await store.advance(81)).toBe(false); // past the deck
-    expect(await store.advance(0)).toBe(false); // never backwards
+    const deck = await store.shuffle(testSeed(5));
+    const e = deck.epoch;
+    expect(await store.advance(e, 3)).not.toBeNull();
+    expect(await store.advance(e, 4)).toBeNull(); // not a multiple of three
+    expect(await store.advance(e, 81)).toBeNull(); // past the deck
+    expect(await store.advance(e, 0)).toBeNull(); // never backwards
+    expect(await store.advance(e, 9)).toBeNull(); // and never skips a draw
+    expect(await store.advance(e, 3)).not.toBeNull(); // standing still: a retry
     expect((await store.load())?.cursor).toBe(3);
+  });
+
+  test("a deck cannot be advanced with a stale epoch", async () => {
+    // Two tabs, one deck. The tab that has not seen the reshuffle must not be
+    // able to spend cards off the deck that replaced its own.
+    const store = memoryDeckStore();
+    const first = await store.shuffle(testSeed(5));
+    expect(await store.advance(first.epoch, 3)).not.toBeNull();
+
+    const second = await store.shuffle(testSeed(6));
+    expect(second.epoch).toBe(first.epoch + 1);
+
+    expect(await store.advance(first.epoch, 3)).toBeNull();
+    expect((await store.load())?.cursor).toBe(0);
+    expect(await store.advance(second.epoch, 3)).not.toBeNull();
   });
 
   test("a deck that fails validation reads as no deck at all", async () => {

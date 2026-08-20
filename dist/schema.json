@@ -4,7 +4,7 @@
   "app": {
     "id": "cast_away",
     "name": "Cast Away",
-    "version": 110
+    "version": 111
   },
   "methods": {
     "consult": {
@@ -685,56 +685,63 @@
         "maxItems": 1
       },
       "output": {
-        "type": "object",
-        "properties": {
-          "readingId": {
-            "type": "string",
-            "description": "bigint as string"
-          },
-          "sealedAt": {
-            "type": "string",
-            "description": "bigint as string"
-          },
-          "movingLines": {
-            "type": "string",
-            "description": "bigint as string"
-          },
-          "cards": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "cardIndex": {
-                  "type": "string",
-                  "description": "bigint as string"
-                },
-                "reversed": {
-                  "type": "boolean"
-                },
-                "position": {
-                  "type": "string"
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "readingId": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "sealedAt": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "movingLines": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "cards": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "cardIndex": {
+                      "type": "string",
+                      "description": "bigint as string"
+                    },
+                    "reversed": {
+                      "type": "boolean"
+                    },
+                    "position": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "cardIndex",
+                    "reversed",
+                    "position"
+                  ]
                 }
               },
-              "additionalProperties": false,
-              "required": [
-                "cardIndex",
-                "reversed",
-                "position"
-              ]
-            }
+              "kameaOrder": {
+                "type": "string",
+                "description": "bigint as string"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "readingId",
+              "sealedAt",
+              "movingLines",
+              "cards",
+              "kameaOrder"
+            ]
           },
-          "kameaOrder": {
-            "type": "string",
-            "description": "bigint as string"
+          {
+            "type": "null"
           }
-        },
-        "additionalProperties": false,
-        "required": [
-          "readingId",
-          "sealedAt",
-          "movingLines",
-          "cards",
-          "kameaOrder"
         ],
         "$schema": "https://json-schema.org/draft/2020-12/schema"
       },
@@ -987,15 +994,57 @@
         "type": "array",
         "prefixItems": [
           {
-            "type": "string",
-            "description": "bigint as string"
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              {
+                "type": "string",
+                "description": "bigint as string"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
           }
         ],
         "minItems": 1,
         "maxItems": 1
       },
       "output": {
-        "type": "boolean",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "seed": {
+                "type": "string"
+              },
+              "cursor": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "epoch": {
+                "type": "string",
+                "description": "bigint as string"
+              },
+              "shuffledAt": {
+                "type": "string",
+                "description": "bigint as string"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "seed",
+              "cursor",
+              "epoch",
+              "shuffledAt"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
         "$schema": "https://json-schema.org/draft/2020-12/schema"
       },
       "type": "update"

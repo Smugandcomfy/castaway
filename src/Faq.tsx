@@ -470,6 +470,15 @@ state       { seed, cursor, epoch, shuffledAt }`}
               demand and never persisted.
             </p>
             <p className="nt-text">
+              The epoch is what makes the cursor safe to move. A draw sends the
+              epoch it believes it is drawing from along with the cursor it
+              wants, and the canister refuses unless the epoch matches and the
+              cursor is either where it already stands or exactly one draw on.
+              A page still holding a deck that was reshuffled somewhere else
+              therefore cannot spend cards off the deck that replaced it, and a
+              retry after a dropped reply is harmless rather than a second draw.
+            </p>
+            <p className="nt-text">
               The standalone Sigil page has no cast, so its square comes from
               the phrase alone,{" "}
               <code>movingLines = FNV1a(phrase.toLowerCase()) mod 7</code>,
@@ -558,17 +567,41 @@ ASC = atan2( cos(theta),
 {`Managed memory (schema v1, chain-persisted):
     readings[]  { id, question, timestamp, primary, relating,
                   changingLines, tier, answer }
-    seals[]     { readingId, sealedAt, movingLines, cards[] }
+    seals[]     { readingId, sealedAt, movingLines, cards[],
+                  kameaOrder }
     draws[]     { id, drawnAt, movingLines, cards[] }
     sigils[]    { id, madeAt, phrase, movingLines, overridden }
     notes[]     { entryId, body, updatedAt }
     deck        ?{ seed, cursor, epoch, shuffledAt }
     flags       { entered, hasCast }
+    place       ?Text
+    theme       ?Text
 
 Held in memory for the session only:
     unsealed tarot pulls -- re-rollable until the sigil seals them,
     at which point the seal is what is written.`}
             </pre>
+            <p className="nt-text">
+              <strong>What is kept.</strong> The journal holds the most recent
+              50 readings, 40 seals, 40 draws, 15 sigils and 20 notes; each
+              collection drops oldest-first. A question is capped at 500 bytes,
+              a note at 600, a sigil phrase at 500.
+            </p>
+            <p className="nt-text">
+              Those limits are not about disk. A self-call reply is measured
+              against two kernel budgets before the tile is allowed to see it —
+              4 096 container elements counted across the whole value, and 64
+              KiB of projected JSON. The journal is read on every mount, so a
+              reply over either budget does not degrade the app, it ends it: the
+              query throws every time, and the only way back is to wipe the
+              journal. Counting as the kernel counts, a journal costs about{" "}
+              <code>14 + 18·seals + 17·draws + 6·sigils + 4·notes</code>{" "}
+              elements, and the caps above hold the worst case near a third of
+              the limit. They are in bytes rather than characters because the
+              budgets are: a character is up to four UTF-8 bytes, so a limit
+              counted in characters is one that quadruples without warning in
+              Chinese, Japanese or emoji.
+            </p>
             <p className="nt-text">
               Derived values are not stored. The sigil is a function of the
               question, the moving-line count, the elected square and the

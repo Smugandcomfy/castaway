@@ -212,6 +212,9 @@ function dispatch(method: string, args: any[]) {
           };
         case "seal": {
           const [readingId, movingLines, kameaOrder, cards] = tuple;
+          // A seal names a reading. Null when there is none, rather than a row
+          // in the journal that renders against nothing.
+          if (!history.some((r) => nat(r.id) === nat(readingId))) return null;
           const order = Number(kameaOrder) < 3 || Number(kameaOrder) > 9 ? 3 : Number(kameaOrder);
           const entry = {
             readingId: nat(readingId),
@@ -286,12 +289,17 @@ function dispatch(method: string, args: any[]) {
           return deck;
         }
         case "advance_deck": {
-          const cursor = Number(tuple[0]);
-          if (cursor > 78 || cursor % 3 !== 0) return false;
-          if (!deck) return false;
-          if (cursor < Number(deck.cursor)) return false;
+          // The epoch travels with the cursor: a tab holding a pre-shuffle deck
+          // must not be able to spend cards off the one that replaced it.
+          const [epoch, cursor] = [Number(tuple[0]), Number(tuple[1])];
+          if (cursor > 78 || cursor % 3 !== 0) return null;
+          if (!deck) return null;
+          if (epoch !== Number(deck.epoch)) return null;
+          const at = Number(deck.cursor);
+          // One draw at a time, or standing still so a retry succeeds.
+          if (cursor !== at && cursor !== at + 3) return null;
           deck = { ...deck, cursor: nat(cursor) };
-          return true;
+          return deck;
         }
         case "set_entered":
           flags = { ...flags, entered: true };

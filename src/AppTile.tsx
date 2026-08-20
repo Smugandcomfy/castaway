@@ -62,6 +62,13 @@ function isReading(v: unknown): v is Reading {
   );
 }
 
+/// The question's budget, in UTF-8 bytes, matching `MAX_QUESTION_BYTES` in
+/// backend/main.mo. For anything written in Latin script this is exactly the
+/// character count, which is why the counter still reads the way it always did.
+const QUESTION_LIMIT = 500;
+const textEncoder = new TextEncoder();
+const sizeOf = (t: string): number => textEncoder.encode(t).length;
+
 interface Reading {
   id: string;
   question: string;
@@ -162,6 +169,14 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
           position: d.position,
         })),
       });
+      if (entry === null) {
+        // The canister has no such reading. In practice that means this cast
+        // has rolled off the end of the history while the page sat open.
+        setError(
+          "This cast is no longer in your journal, so it cannot be sealed. Throw again.",
+        );
+        return;
+      }
       setSealed(entry);
       // The sigil is created below the fold; go and look at it.
       timers.current.push(setTimeout(() => reveal(sigilRef.current), 60));
@@ -331,10 +346,18 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
               id="sf-question"
               className="nt-textarea ca-ask-textarea"
               rows={2}
-              maxLength={500}
               placeholder="wanderer... ask your question"
               value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+              onChange={(e) => {
+                // The canister measures the question in UTF-8 bytes, so the
+                // input has to as well. `maxLength` counts UTF-16 units, which
+                // let 200 emoji through a "500 character" field and straight
+                // into a refusal from the other side.
+                const next = e.target.value;
+                if (sizeOf(next) <= QUESTION_LIMIT || next.length < question.length) {
+                  setQuestion(next);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -344,7 +367,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
               aria-label="Your question"
             />
             <span className="nt-help ca-ask-count">
-              {question.length} / 500
+              {sizeOf(question)} / {QUESTION_LIMIT}
             </span>
           </div>
 

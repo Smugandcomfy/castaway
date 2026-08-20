@@ -96,13 +96,23 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
 
       // Advance first. If the canister refuses the cursor the draw never
       // happened, so the reader is not shown cards the deck did not spend.
-      const moved = await store.advance(next.cursor);
+      //
+      // The epoch goes with it. A refusal now usually means another tab
+      // reshuffled underneath this one, so the honest response is to take the
+      // canister's deck as the truth and let the reader draw again from there.
+      const moved = await store.advance(deck.epoch, next.cursor);
       if (!moved) {
-        setError("The deck would not turn. Reload and try again.");
+        const current = await store.load();
+        if (current) setDeck(current);
+        setError(
+          current && current.epoch !== deck.epoch
+            ? "This deck was reshuffled somewhere else. Draw again from the new one."
+            : "The deck would not turn. Reload and try again.",
+        );
         return;
       }
 
-      setDeck(next);
+      setDeck(moved);
       setPull({ cards, drawnAt, movingLines });
 
       await saveDraw({
