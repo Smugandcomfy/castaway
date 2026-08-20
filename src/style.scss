@@ -1968,8 +1968,12 @@
   // Phones: the ramp's floor is still too large here, so the wordmark steps
   // down explicitly.
   @media (max-width: 520px) {
-    .ca-home-title { font-size: 44px; }
+    // A tile can be genuinely small — a few hundred pixels in a workspace
+    // cell — and CAST AWAY is set `nowrap`, so a fixed size here overflows
+    // rather than wrapping. It rides the frame down instead.
+    .ca-home-title { font-size: clamp(24px, 15vw, 44px); }
     .ca-home-inner { max-width: 100%; }
+    .ca-home-orrery { max-width: 100%; }
   }
 
   .ca-home-subtitle {

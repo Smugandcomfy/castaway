@@ -111,14 +111,25 @@
 
 .orrery-readout {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 12px;
+  gap: 2px 12px;
   padding-top: 8px;
   font-size: 11px;
   color: var(--orrery-dim);
 }
 
-.orrery-readout-body { color: var(--orrery-bone); min-height: 1em; }
+/* The timestamp is `nowrap` and so cannot shrink, which means the body absorbs
+   the whole shortfall in a narrow frame. `.nt-app` sets `overflow-wrap:
+   anywhere`, so instead of wrapping, "Select a wanderer" shattered mid-word
+   against the edge. Wrapping the row drops the timestamp onto its own line and
+   gives the body the full width; `normal` keeps words intact once it gets it. */
+.orrery-readout-body {
+  color: var(--orrery-bone);
+  min-height: 1em;
+  min-width: 0;
+  overflow-wrap: normal;
+}
 .orrery-readout-body:empty::before { content: '\00a0'; }
 .orrery-readout-time { white-space: nowrap; }
 
