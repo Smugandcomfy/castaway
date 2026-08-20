@@ -379,6 +379,7 @@ function ReadingRow({
                       new Date(Number(reading.timestamp / 1_000_000n))
                     }
                     kameaOrder={seal.kameaOrder}
+                    stampAt={new Date(seal.sealedAt)}
                     cards={seal.cards.map((c) => ({
                       index: c.cardIndex,
                       reversed: c.reversed,
@@ -444,6 +445,7 @@ function SigilRow({
           phrase={entry.phrase}
           movingLines={entry.movingLines}
           castTimestamp={new Date(entry.madeAt)}
+          stampAt={new Date(entry.madeAt)}
         />
         <blockquote className="ca-journal-phrase">"{entry.phrase}"</blockquote>
       </div>

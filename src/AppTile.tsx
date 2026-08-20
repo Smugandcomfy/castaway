@@ -459,6 +459,7 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
                   new Date(Number(reading.timestamp / 1_000_000n))
                 }
                 kameaOrder={sealed.kameaOrder}
+                stampAt={new Date(sealed.sealedAt)}
                 cards={sealed.cards.map((c) => ({
                   index: c.cardIndex,
                   reversed: c.reversed,

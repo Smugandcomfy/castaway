@@ -11,6 +11,7 @@ import {
   planetKeyOf,
   presidingCondition,
 } from "./presiding";
+import { formatMansionAt } from "./mansions";
 
 /// The kamea traced. The grid stays faint; the path is what you look at.
 ///
@@ -28,6 +29,7 @@ export function Sigil({
   castTimestamp,
   cards,
   kameaOrder,
+  stampAt,
   showGrid = true,
 }: {
   phrase: string;
@@ -49,6 +51,14 @@ export function Sigil({
   /// falls back to the moving-line count alone, which is what the standalone
   /// Sigil page wants.
   kameaOrder?: number;
+  /// The moment the artifact was *made* — a seal's `sealedAt`, a standalone
+  /// sigil's `madeAt` — which is stamped with the Mansion of the Moon it was
+  /// made under. In the tradition mansions elect the time of the operation,
+  /// so this is the making, not the cast: a question asked on Monday and
+  /// sealed on Wednesday carries Wednesday's mansion, and the square it is
+  /// traced on still comes from Monday's Moon. Annotation only — it feeds
+  /// nothing.
+  stampAt?: Date;
   showGrid?: boolean;
 }) {
   const k = kameaOrder ? kamea(kameaOrder) : presidingKamea(movingLines);
@@ -198,6 +208,9 @@ export function Sigil({
         <span className="nt-meta ca-sigil-detail">
           {order}×{order} · constant {k.constant}
         </span>
+        {stampAt && (
+          <span className="ca-sigil-mansion">{formatMansionAt(stampAt)}</span>
+        )}
       </figcaption>
     </figure>
   );

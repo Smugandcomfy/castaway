@@ -26,6 +26,7 @@ import {
   ELECTION_COUNTS_8POW6,
 } from "./sigil_core";
 import {
+  moonLongitudeAt,
   ascendantDeg,
   midheavenDeg,
   moonSignIndex,
@@ -35,6 +36,15 @@ import {
   separation,
   lunarNodesDeg,
 } from "./sky_core";
+import {
+  MANSIONS,
+  mansionOf,
+  mansionAt,
+  mansionForTimestamp,
+  formatMansion,
+  formatMansionAt,
+  MANSION_WIDTH_DEG,
+} from "./mansions";
 import {
   deckOrder,
   deckFlips,
@@ -81,6 +91,14 @@ const debugApi = {
   drawThree,
   freshDeck,
   mintSeed,
+  MANSIONS,
+  mansionOf,
+  mansionAt,
+  mansionForTimestamp,
+  formatMansion,
+  formatMansionAt,
+  MANSION_WIDTH_DEG,
+  moonLongitudeAt,
   presidingCondition,
   conditionLine,
   planetKeyOf,

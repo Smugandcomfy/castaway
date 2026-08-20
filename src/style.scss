@@ -1127,6 +1127,38 @@
       }
     }
 
+    // ============================================================ bibliography
+    //
+    // Denser than the math panel: each entry is a short block of prose rather
+    // than a formula, so the measure is narrower and the leading tighter.
+
+    .ca-bib .nt-text {
+      max-width: 68ch;
+    }
+
+    .ca-bib .nt-text + .nt-text {
+      margin-top: 14px;
+    }
+
+    .ca-bib .ca-faq-list li + li {
+      margin-top: 10px;
+    }
+
+    // The Mansion of the Moon a sigil was made under. Sits under the square's
+    // order and constant, in the same engraved register as the presiding line.
+    .ca-sigil-mansion {
+      display: block;
+      font-family: Baskerville, "Palatino Linotype", "Book Antiqua", Georgia,
+        serif;
+      font-style: italic;
+      font-size: 12px;
+      line-height: 1.4;
+      letter-spacing: 0;
+      color: var(--nt-text-muted);
+      margin-top: 4px;
+      max-width: 34ch;
+    }
+
     // Tarot page — the deck's own status line. Always visible once a deck
     // exists, so the reader always knows what is left before drawing.
     .ca-deck-meta {
@@ -1529,6 +1561,23 @@
   .ca-tab.is-active {
     color: var(--nt-text-strong);
     box-shadow: inset 0 -2px var(--nt-accent);
+  }
+
+  // Panel switch inside a page — same tab language as the masthead, so the
+  // app only teaches it once. Centred, and separated from the content by the
+  // same hairline the masthead uses.
+  .ca-subtabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin: 0 0 24px;
+    padding-bottom: 8px;
+    box-shadow: inset 0 -1px var(--nt-line-subtle);
+  }
+
+  .ca-subtabs .ca-tab {
+    font-size: 14px;
+    padding: 7px 14px 6px;
   }
 
   .ca-masthead__theme {

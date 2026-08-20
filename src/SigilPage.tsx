@@ -60,6 +60,11 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
   const [override, setOverride] = useState<number | null>(null);
   const [journaled, setJournaled] = useState(false);
 
+  /// The live preview has no `madeAt` yet, so it is stamped with the moment
+  /// the page was opened — the auspice you would be making under. Saving to
+  /// the journal records its own `madeAt`, and that is what the entry shows.
+  const openedAt = useMemo(() => new Date(), []);
+
   const trimmed = phrase.trim();
   const auto = useMemo(() => autoElection(trimmed.toLowerCase()), [trimmed]);
   const movingLines = override ?? auto;
@@ -106,7 +111,11 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
           {trimmed && (
             <>
               <div className="ca-sigil-standalone-art">
-                <Sigil phrase={trimmed} movingLines={movingLines} />
+                <Sigil
+                  phrase={trimmed}
+                  movingLines={movingLines}
+                  stampAt={openedAt}
+                />
               </div>
 
               <div className="ca-planet-picker" role="radiogroup" aria-label="Presiding planet">

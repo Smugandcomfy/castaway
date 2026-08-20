@@ -1,19 +1,52 @@
+import { useState } from "react";
 import type { View } from "./App";
 import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
+import { Bibliography } from "./Bibliography";
 
 /// Technical documentation of the whole pipeline. Every constant,
 /// threshold, and formula in the app is here, with worked examples and
 /// verification hints. No marketing copy.
+///
+/// Two panels: the math you can check yourself, and the documents it all
+/// descends from. Every system in the app has both — a formula and a source —
+/// so they sit side by side rather than one being an appendix to the other.
+
+type Panel = "math" | "sources";
 
 export default function Faq({ goTo }: { goTo: (v: View) => void }) {
+  const [panel, setPanel] = useState<Panel>("math");
+
   return (
     <main className="nt-app nt-app--fill cast-away">
       <div className="nt-page">
 
         <Masthead current="faq" goTo={goTo} />
 
-        <div className="ca-faq">
+        <div className="ca-subtabs" role="tablist" aria-label="FAQ sections">
+          <button
+            type="button"
+            role="tab"
+            className={`ca-tab${panel === "math" ? " is-active" : ""}`}
+            aria-selected={panel === "math"}
+            onClick={() => setPanel("math")}
+          >
+            Verifiable Math
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={`ca-tab${panel === "sources" ? " is-active" : ""}`}
+            aria-selected={panel === "sources"}
+            onClick={() => setPanel("sources")}
+          >
+            Bibliography
+          </button>
+        </div>
+
+        {panel === "sources" && <Bibliography />}
+
+        <div className="ca-faq" hidden={panel !== "math"}>
           <section className="ca-faq-item">
             <h2 className="nt-section-heading">Overview</h2>
             <p className="nt-text">
@@ -32,9 +65,8 @@ export default function Faq({ goTo }: { goTo: (v: View) => void }) {
               directly.
             </p>
             <p className="nt-text">
-              Nothing along the way is opaque. Every step below can be
-              reproduced from the source in <code>backend/oracle/</code>{" "}
-              and <code>src/</code>.
+              Every step below is reproducible from the source in{" "}
+              <code>backend/oracle/</code> and <code>src/</code>.
             </p>
           </section>
 
@@ -180,12 +212,10 @@ else (yang == 3):
         else                 → non-committal`}
             </pre>
             <p className="nt-text">
-              Simulated 400 000 times from real three-coin entropy, this
-              lands at roughly{" "}
+              Over 400 000 simulated casts from three-coin entropy:{" "}
               <strong>36% affirmative · 28% non-committal · 36% negative</strong>.
-              Symmetric by design. The toy Magic 8-Ball is 50/25/25 —
-              deliberately optimistic; this one is honest about the
-              coins.
+              The distribution is symmetric. The Magic 8-Ball die is
+              50/25/25.
             </p>
           </section>
 
@@ -223,17 +253,14 @@ else (yang == 3):
 6            Luna      9×9    369           1     ~0.024%`}
             </pre>
             <p className="nt-text">
-              Those odds are the problem. The distribution is exact over
-              the 8<sup>6</sup> = 262 144-sequence space and matches
-              C(6,k)·2<sup>k</sup>·6<sup>6−k</sup> — and it is brutally
-              lopsided. Luna's square would turn up once in about four
-              thousand casts, Mercury's once in two hundred. Five of the
-              seven kameas were, in practice, unreachable.
+              That distribution is exact over the 8<sup>6</sup> = 262 144
+              sequence space and matches C(6,k)·2<sup>k</sup>·6<sup>6−k</sup>.
+              Its range is 1458:1 — Luna at one cast in 4 096, Mercury at one
+              in 228.
             </p>
             <p className="nt-text">
-              So the cast no longer starts from Saturn every time. The
-              sky chooses where to start; the cast chooses how far to
-              walk:
+              The election therefore takes two inputs. The start index comes
+              from the sky, the step count from the cast:
             </p>
             <pre className="ca-code">
 {`start   = traditional ruler of the sign the Moon stood in
@@ -242,26 +269,21 @@ step    = movingLines, 0-6, along the Chaldean order
 order n = ((start + step) mod 7) + 3`}
             </pre>
             <p className="nt-text">
-              The Chaldean order is the seven planets by decreasing
-              orbital period — and it is <em>also</em>, exactly, the order
-              of their magic squares: Saturn's is 3×3, Luna's is 9×9. So
-              stepping along one is stepping along the other, and the old
-              rule turns out to have been the special case that always
-              started at Saturn.
+              The Chaldean order is the seven planets by decreasing orbital
+              period, and coincides exactly with the order of their squares:
+              Saturn 3×3 through Luna 9×9. Index <em>i</em> in that order is
+              square <em>i</em> + 3. The prior rule is the case start = 0.
             </p>
             <p className="nt-text">
-              Both causes survive, which is the whole point. Your cast
-              still shapes your sigil; the sky is no longer decoration
-              printed beside it but half of why it looks as it does. And
-              the election evens out — exact over every moving-line count
-              against every sign of the Moon:
+              Exact over every moving-line count against every sign of the
+              Moon, taking signs as equiprobable:
             </p>
             <pre className="ca-code">
 {`Saturn  13.43%    Sol      14.91%    Luna  14.09%
 Jupiter 14.16%    Venus    13.66%
 Mars    15.57%    Mercury  14.19%
 
-spread 1.16x   (the old rule: 1483x)`}
+spread 1.16x   (the old rule: 1458x)`}
             </pre>
             <p className="nt-text">
               The election still never reads randomness. It reads{" "}
@@ -309,16 +331,13 @@ spread 1.16x   (the old rule: 1483x)`}
               </li>
             </ol>
             <p className="nt-text">
-              The cards contribute <em>cells</em> rather than letters, and
-              the reason is measured rather than aesthetic. Spare's
-              reduction strikes repeats across the whole phrase, so a long
-              question has already spent the alphabet: folding the cards'
-              names into the text changes nothing at all for roughly two
-              thirds of questions past about 130 characters, and the effect
-              shrinks steadily before that. A rule that quietly stops
-              applying to the most considered questions is not a rule.
-              Cells are always free to be visited, so three cards always
-              draw three more cells.
+              The cards contribute cells rather than letters. Spare's
+              reduction strikes repeats across the whole phrase, so appending
+              card names to a long question adds no new letters: measured over
+              3 000 random pulls per question, the median letters added falls
+              from 10 at 12 characters to 0 at 137, where 66% of pulls leave
+              the figure unchanged. Cell indices are not deduplicated against
+              the letters, so three cards always contribute three cells.
             </p>
             <p className="nt-text">
               Saturn (3×3) and Jupiter (4×4) are taken verbatim from
@@ -372,9 +391,8 @@ retrograde = delta < 0                            // false for Sun, Moon`}
               11 · The tarot — the oracle's pull
             </h2>
             <p className="nt-text">
-              There are two tarot systems in this app and they are
-              different instruments on purpose. This is the first: three
-              cards from a deck of 78 (22 majors + 4 × 14 minors).
+              The first of two independent tarot systems. Three cards from a
+              deck of 78 (22 majors + 4 × 14 minors).
               Partial Fisher-Yates over deck indices — three swaps, no
               card repeats. Seed and PRNG:
             </p>
@@ -401,17 +419,15 @@ for i in 0..2:
               12 · The Tarot page — a deck you own
             </h2>
             <p className="nt-text">
-              The second tarot system, and the opposite of the first. The
-              oracle <em>grants you a pull</em>, bound to a reading and
-              re-rollable until you seal it. Here you <em>draw from your
-              deck</em>: 78 cards shuffled once into a fixed order,
-              walked three at a time, and gone until you shuffle again.
-              No question touches it — a physical deck does not care what
-              you asked.
+              The second tarot system. It shares the <code>DECK</code> data
+              and the card renderer with the oracle's pull and nothing else:
+              no shared RNG, no shared seed recipe, no shared state. 78 cards
+              are shuffled once into a fixed order and walked three at a time.
+              The question is not an input.
             </p>
             <p className="nt-text">
-              <strong>The shuffle is the only random act.</strong> It mints
-              128 bits, and nothing afterwards rolls anything:
+              The shuffle is the only entropy event. It mints 128 bits;
+              nothing after it is random:
             </p>
             <pre className="ca-code">
 {`seed        crypto.getRandomValues -> 32 hex chars (128 bits)
@@ -420,36 +436,31 @@ flips[]     one boolean per slot,   stream seed|flip|i  -> sfc32
 state       { seed, cursor, epoch, shuffledAt }`}
             </pre>
             <p className="nt-text">
-              The two streams are <em>domain-separated</em>: they derive
-              from the same seed through different tags, so changing how
-              the order is computed can never silently change the
-              orientations. Independence is checked statistically — the
-              kind of card on top does not bias whether it is reversed.
+              The two streams are domain-separated: both derive from the seed
+              through different tags, so a change to one cannot alter the
+              other. Tested statistically — major-top and minor-top reversal
+              rates both sit inside 0.42–0.58 over 2 000 seeds.
             </p>
             <p className="nt-text">
-              Orientations are <strong>baked at shuffle time</strong>. The
-              k-th card of an epoch lies the way it lies from the moment
-              you shuffle, whether you reach it on the first draw or the
-              twenty-sixth. That is how a real deck behaves: reversal is
-              how the card <em>lies</em>, not a coin flipped when you pick
-              it up.
+              Orientations are fixed at shuffle time, not at draw time.
+              <code>flips[k]</code> is the orientation of the k-th slot of the
+              epoch regardless of which draw reaches it. Verified across a full
+              26-draw walk.
             </p>
             <p className="nt-text">
-              78 = 26 × 3 exactly, so the twenty-sixth draw empties the
-              deck with nothing left over, and a card cannot repeat within
-              an epoch because the order is a permutation. The no-repeat
-              guarantee is per-<em>deck</em> here, where the oracle's is
-              only per-spread.
+              78 = 26 × 3, so the 26th draw empties the deck with no
+              remainder and the 27th throws. No card repeats within an epoch,
+              structurally: the order is a permutation. The no-repeat guarantee
+              is per-deck here and per-spread in the oracle's pull.
             </p>
             <p className="nt-text">
-              Only <code>{"{ seed, cursor, epoch, shuffledAt }"}</code> is
-              stored. The permutation and the orientations are recomputed
-              from the seed whenever they are needed — persist the cause,
-              recompute the consequence, the same rule the sky follows.
+              Stored state is <code>{"{ seed, cursor, epoch, shuffledAt }"}</code>.
+              The permutation and orientations are recomputed from the seed on
+              demand and never persisted.
             </p>
             <p className="nt-text">
-              The standalone <strong>Sigil page</strong> is simpler: it has
-              no cast, so its square comes from the phrase alone,{" "}
+              The standalone Sigil page has no cast, so its square comes from
+              the phrase alone,{" "}
               <code>movingLines = FNV1a(phrase.toLowerCase()) mod 7</code>,
               and you may override the planet by hand. The trace stays a
               pure function of <code>(phrase, kamea)</code>, so the same
@@ -460,33 +471,28 @@ state       { seed, cursor, epoch, shuffledAt }`}
           <section className="ca-faq-item">
             <h2 className="nt-section-heading">13 · The Sky page</h2>
             <p className="nt-text">
-              Geocentric — everything from where the observer stands,
-              which is the picture classical astronomers and astrologers
-              have always read. The splash orrery is its opposite and its
-              sibling: heliocentric, log-radii, the solar system seen from
-              above.
+              Geocentric, equinox of date. The splash orrery is the
+              heliocentric counterpart, drawn top-down on log radii.
             </p>
             <p className="nt-text">
-              <strong>The wheel.</strong> Earth at the centre, the zodiac
-              as a ring of twelve, the Ascendant on the left with degrees
-              increasing counter-clockwise — the classical orientation, so
-              the Midheaven lands near the top and anything drawn below
-              the horizon line genuinely is below it.
+              <strong>The wheel.</strong> Earth centred, the zodiac as twelve
+              30° sectors, the Ascendant at screen left with longitude
+              increasing counter-clockwise. Screen angle for longitude λ is
+              180° + (λ − ASC), which places the Midheaven near the top and
+              sub-horizon degrees below the horizon line.
             </p>
             <p className="nt-text">
-              <strong>Any moment since 1800.</strong> Pick a date and the
-              clock stops; "Return to now" starts it again. The floor is
-              1800 because that is where the orrery&rsquo;s own
-              cross-validation stops holding — the ephemeris is still
-              willing beyond it, but a sky we cannot check is not one worth
-              drawing. Future dates are refused outright.
+              <strong>Any moment since 1800.</strong> Selecting a date stops
+              the clock; "Return to now" restarts it. The floor is 1800
+              because the orrery's cross-validation uses the Standish
+              1800–2050 element set and does not hold outside it. Future
+              dates are rejected.
             </p>
             <p className="nt-text">
-              <strong>The angles need a place.</strong> Everything else on
-              the page is the same for every observer on Earth: a body&rsquo;s
-              ecliptic longitude does not depend on where you stand. The
-              horizon does. Noon in Reykjavik and noon in Quito have
-              entirely different Ascendants, so the page asks for a city.
+              <strong>The angles need a place.</strong> Ecliptic longitude is
+              observer-independent; the horizon is not. The Ascendant and
+              Midheaven are the only values on the page that take a latitude
+              and longitude.
             </p>
             <pre className="ca-code">
 {`theta = SiderealTime(t)*15 + longitude      // local sidereal, degrees
@@ -497,29 +503,28 @@ ASC = atan2( cos(theta),
              -(sin(theta)*cos(eps) + tan(lat)*sin(eps)) )`}
             </pre>
             <p className="nt-text">
-              Those are closed forms, so they get a second opinion. The
-              test suite pushes every answer back through{" "}
-              <code>astronomy-engine</code>&rsquo;s own ecliptic → equator →
-              horizon rotations and asserts the Ascendant lands on the
-              horizon on the eastern side, and the Midheaven lands on the
-              meridian above it — seven places from 64°N to 34°S, six
-              instants from 1801 to 2026. Two independent formulations
-              must agree, which is the standard the orrery is held to.
+              Both are closed forms, verified against a second formulation:
+              the test suite maps each result back through{" "}
+              <code>astronomy-engine</code>'s ecliptic → equator → horizon
+              rotations and asserts altitude {"<"} 0.02° with azimuth in
+              (0°, 180°) for the Ascendant, and off-meridian {"<"} 0.05° with
+              altitude {">"} 0 for the Midheaven. Seven places from 64°N to
+              34°S, six instants from 1801 to 2026. Refraction is disabled;
+              the angles are geometric.
             </p>
             <p className="nt-text">
               <strong>Aspects</strong> are the five Ptolemaic angles with
               conventional orbs — conjunction 8°, sextile 4°, square 6°,
-              trine 6°, opposition 8°. Each is marked applying or
-              separating by running the same positions an hour forward and
-              seeing whether the pair is closing on exact. The orb list is
-              deliberately not configurable: one you can widen until
-              everything aspects everything says nothing at all.
+              trine 6°, opposition 8°. Applying versus separating is
+              determined by recomputing both longitudes at t + 1 h and testing
+              whether the separation is closing on exact. Orbs are fixed, and
+              a pair matches at most one aspect.
             </p>
             <p className="nt-text">
               <strong>The lunar nodes</strong> are read from the next
-              crossing rather than solved directly. The nodes regress about
-              19° a year, so the node&rsquo;s longitude at the next crossing
-              is within a fraction of a degree of its longitude now.
+              ascending crossing rather than solved directly. The nodes
+              regress ~19.35°/year, so the node's longitude at that crossing
+              is within a fraction of a degree of its current longitude.
             </p>
             <p className="nt-muted">
               Everything here uses the same <code>presidingCondition</code>{" "}
@@ -531,13 +536,12 @@ ASC = atan2( cos(theta),
           <section className="ca-faq-item">
             <h2 className="nt-section-heading">14 · The Journal</h2>
             <p className="nt-text">
-              A unified feed of oracle readings, standalone tarot draws,
-              and standalone sigil generations. All of it is chain-persisted
-              in the app's managed memory — nothing is kept in the browser.
-              It cannot be: an app tile runs in a credentialless,
-              opaque-origin iframe with no storage and no resident
-              persistence, so anything written to <code>localStorage</code>
-              is discarded the moment the tile is closed.
+              A unified feed of oracle readings, standalone tarot draws, and
+              standalone sigil generations, all chain-persisted in managed
+              memory. Nothing is kept in the browser: an app tile is a
+              credentialless, opaque-origin iframe with no storage and no
+              resident persistence, so <code>localStorage</code> writes are
+              discarded.
             </p>
             <pre className="ca-code">
 {`Managed memory (schema v1, chain-persisted):
@@ -555,28 +559,102 @@ Held in memory for the session only:
     at which point the seal is what is written.`}
             </pre>
             <p className="nt-text">
-              Note how little a seal or a deck stores. The sigil is a pure
-              function of the question, the moving-line count and the
-              sealed cards; the deck's order and orientations are derived
-              from its seed; the sky is recomputed from the presiding
-              planet and the timestamp. Persist the cause, recompute the
-              consequence — which is also why old entries gain sky
-              annotations retroactively.
+              Derived values are not stored. The sigil is a function of the
+              question, the moving-line count, the elected square and the
+              sealed cards; the deck's order and orientations follow from its
+              seed; the sky follows from the presiding planet and the
+              timestamp. This is why historical entries gain sky annotations
+              retroactively.
             </p>
             <p className="nt-text">
-              Notes are attached by entry id — for oracle readings the
-              canister's monotonic id, for standalone entries an id the
-              canister mints. "Clear the journal" wipes all of it in one{" "}
-              <code>clear()</code> call.
+              Notes are keyed by entry id: the canister's monotonic reading
+              id, or a canister-minted id for standalone entries. "Clear the
+              journal" is a single <code>clear()</code> call; the theme and
+              place preferences survive it.
             </p>
+          </section>
+
+          <section className="ca-faq-item">
+            <h2 className="nt-section-heading">
+              15 · The Mansion of the Moon
+            </h2>
+            <p className="nt-text">
+              Every sigil is stamped with the Mansion of the Moon it was made
+              under. Annotation only: it is a pure function of a timestamp
+              already persisted, feeds no verdict, election, trace or card,
+              and is computed at render rather than stored. Existing journal
+              entries gained their stamps retroactively when this shipped.
+            </p>
+            <p className="nt-text">
+              Source: Agrippa, <em>Three Books of Occult Philosophy</em>, Book
+              II ch. 33 — the same Book II the kameas come from. Purposes are
+              terse abridgments of his "vertues", malefic ones intact; the
+              stamp reports the tradition rather than promising an outcome.
+            </p>
+            <p className="nt-text">
+              Frame: tropical, equinox of date, measured from 0° Aries —
+              Agrippa's own reckoning. The older star-anchored (sidereal)
+              mansions are a different system and are not used here. The
+              longitude is the same value the kamea election reads for the
+              Moon's sign, so sign and mansion cannot disagree.
+            </p>
+            <pre className="ca-code">
+{`width   = 360/28 = 90/7 deg = 12 deg 51' 25.71"  exactly
+mansion = floor(norm360(elon) * 7 / 90) + 1       // 1..28`}
+            </pre>
+            <p className="nt-text">
+              Seven mansions span exactly 90°, so mansions 1, 8, 15 and 22
+              begin precisely at 0° Aries, Cancer, Libra and Capricorn, and
+              mansion boundaries meet the zodiac only there. Agrippa's printed
+              boundaries show the same thing: their whole minutes repeat the
+              seven-cycle 0′, 51′, 42′, 34′, 25′, 17′, 8′, which falls out of
+              90/7 for all 28 rows.
+            </p>
+            <p className="nt-text">
+              Which moment: the act that made the artifact. A sealed cast
+              stamps from <code>sealedAt</code>, a standalone sigil from{" "}
+              <code>madeAt</code>. In the tradition mansions elect the time of
+              the operation, and sealing is the making — so a question asked
+              on Monday and sealed on Wednesday carries Wednesday's mansion
+              while the square it is traced on still comes from Monday's Moon.
+            </p>
+            <pre className="ca-code">
+{`I       0 Ari 00   Alnath      journeys; discord
+II     12 Ari 51   Allothaim   finding treasure; retaining captives
+III    25 Ari 42   Achaomazon  favors sailors, huntsmen, alchemists
+IV      8 Tau 34   Aldebaram   hinders buildings, wells, mines; discord
+V      21 Tau 25   Alchatay    return from journeys; scholars; health
+VI      4 Gem 17   Alhanna     hunting and sieges; harms harvests and physic
+VII    17 Gem 08   Aldimiach   gain and friendship; favors lovers
+VIII    0 Can 00   Alnaza      love and fellowship of travelers; binds captives
+IX     12 Can 51   Archaam     hinders harvests and travelers; discord
+X      25 Can 42   Algelioche  strengthens buildings; love; help against enemies
+XI      8 Leo 34   Azobra      voyages; gain by trade; freeing captives
+XII    21 Leo 25   Alzarpha    prospers harvests and plantings; hinders seamen
+XIII    4 Vir 17   Alhaire     benevolence, gain, voyages; frees captives
+XIV    17 Vir 08   Achureth    love of the married; cures the sick; hinders land travel
+XV      0 Lib 00   Agrapha     extracting treasure; digging; divorce and discord
+XVI    12 Lib 51   Azubene     hinders journeys and wedlock; frees captives
+XVII   25 Lib 42   Alchil      betters bad fortune; durable love; strong buildings
+XVIII   8 Sco 34   Alchas      discord and conspiracy; revenge; frees captives
+XIX    21 Sco 25   Allatha     sieges and expulsion; peril to seamen
+XX      4 Sag 17   Abnahaya    taming beasts; strengthens prisons; compels arrival
+XXI    17 Sag 08   Abeda       harvests, gain, buildings, travelers; divorce
+XXII    0 Cap 00   Sadahacha   escape of servants and captives; curing disease
+XXIII  12 Cap 51   Zabadola    divorce; liberty of captives; health of the sick
+XXIV   25 Cap 42   Sadabath    goodwill of the married; victory of soldiers
+XXV     8 Aqu 34   Sadalabra   sieges and revenge; binding; hastens messengers
+XXVI   21 Aqu 25   Alpharg     union and love; health of captives; breaks prisons
+XXVII   4 Pis 17   Alcharya    increases harvests and gain; heals; endangers seamen
+XXVIII 17 Pis 08   Albotham    harvests and trade; safe passage; joy of the married`}
+            </pre>
           </section>
 
           <section className="ca-faq-item">
             <h2 className="nt-section-heading">Verifying it yourself</h2>
             <p className="nt-text">
-              This page exposes the oracle's math on{" "}
-              <code>window.__castAway</code>. Open your browser's
-              developer console and paste any of the following.
+              The oracle's math is exposed on <code>window.__castAway</code>.
+              Paste any of the following into a browser console.
             </p>
 
             <p className="nt-text">Destructure once for brevity:</p>
@@ -585,6 +663,8 @@ Held in memory for the session only:
   KING_WEN, DECK, draw, transform, isYang, isChanging,
   hexagramNumberOf, kamea, presidingKamea, trace, traceWithCards,
   electedOrder, castKamea, CHALDEAN, SIGN_RULER,
+  MANSIONS, mansionOf, mansionAt, mansionForTimestamp,
+  formatMansion, formatMansionAt, moonLongitudeAt,
   ELECTION_COUNTS_8POW6, presidingCondition, formatZodiac,
   ascendantDeg, midheavenDeg, moonSignIndex, castSky, castSkyLine,
   aspectsAmong, separation, lunarNodesDeg,
@@ -647,6 +727,27 @@ formatZodiac(asc)
 // The Midheaven ignores latitude; the Ascendant does not.
 midheavenDeg(new Date(), 0) === midheavenDeg(new Date(), 0)   // true
 ascendantDeg(new Date(), 60, 0) !== ascendantDeg(new Date(), 0, 0)`}
+            </pre>
+
+            <p className="nt-text">
+              <strong>The mansions divide the circle exactly (§15):</strong>
+            </p>
+            <pre className="ca-code">
+{`// Seven mansions to a quadrant, so the cardinals fall on boundaries.
+mansionOf(0) === 1 && mansionOf(90) === 8 &&
+mansionOf(180) === 15 && mansionOf(270) === 22          // true
+
+// Agrippa's printed minute-cycle falls out of 90/7 exactly:
+MANSIONS.every((m, i) =>
+  Math.floor(m.startDeg * 60) % 60 === [0,51,42,34,25,17,8][i % 7])
+
+// Sign and mansion can never disagree about the quadrant:
+const e = 137.2
+Math.floor((mansionOf(e) - 1) / 7) === Math.floor(Math.floor(e / 30) / 3)
+
+// The stamp for right now, from the same Moon the election reads:
+formatMansionAt(new Date())
+mansionOf(moonLongitudeAt(new Date())) === mansionForTimestamp(new Date()).n`}
             </pre>
 
             <p className="nt-text">

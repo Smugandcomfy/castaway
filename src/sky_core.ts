@@ -197,14 +197,23 @@ const WANDERERS: readonly { key: PlanetKey; label: string }[] = [
   { key: "saturn", label: "Saturn" },
 ];
 
+/// The Moon's tropical ecliptic longitude at an instant, degrees [0, 360).
+///
+/// The single source for everything the Moon decides. The sign elects the
+/// sigil's square (`electedOrder` in sigil_core); the mansion stamps the seal
+/// (`mansions.ts`). Both read this one function, so the two facts can never
+/// disagree about where the Moon actually was.
+export function moonLongitudeAt(when: Date): number {
+  return norm360(presidingCondition("luna", when).elonDeg);
+}
+
 /// Which sign the Moon stood in, 0 = Aries … 11 = Pisces.
 ///
 /// This is what elects the sigil's square together with the cast's moving
-/// lines — see `electedOrder` in sigil_core. The Moon changes sign roughly
-/// every two and a half days, which is fast enough that the sky is a real
-/// participant rather than a constant.
+/// lines. The Moon changes sign roughly every two and a half days, which is
+/// fast enough that the sky is a real participant rather than a constant.
 export function moonSignIndex(when: Date): number {
-  return Math.floor(norm360(presidingCondition("luna", when).elonDeg) / 30);
+  return Math.floor(moonLongitudeAt(when) / 30);
 }
 
 export function castSky(when: Date): CastSky {
