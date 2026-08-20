@@ -128,6 +128,17 @@ const msOf = (v: string | string | bigint | number): number =>
     : Math.floor(Number(v) / 1_000_000);
 
 /// Candid `Nat` for a card index arrives as bigint.
+/// A moving-line count, forced into the 0-6 the sigil election accepts.
+///
+/// `presidingKamea` throws outside that range, and it is called during render,
+/// so one bad value takes the whole Journal page down to the error boundary.
+/// The canister clamps this on write now, but entries stored before it did are
+/// still out there, and a stored value is not a promise.
+const movingLinesOf = (v: string | bigint | number): number => {
+  const n = num(v);
+  return Number.isInteger(n) && n >= 0 && n <= 6 ? n : 0;
+};
+
 const cardOf = (c: {
   cardIndex: string | bigint | number;
   reversed: boolean;
@@ -198,21 +209,21 @@ async function fetchJournal(): Promise<Journal> {
     seals: raw.seals.map((s) => ({
       readingId: num(s.readingId),
       sealedAt: msOf(s.sealedAt),
-      movingLines: num(s.movingLines),
+      movingLines: movingLinesOf(s.movingLines),
       kameaOrder: num(s.kameaOrder),
       cards: s.cards.map(cardOf),
     })),
     draws: raw.draws.map((d) => ({
       id: d.id,
       drawnAt: msOf(d.drawnAt),
-      movingLines: num(d.movingLines),
+      movingLines: movingLinesOf(d.movingLines),
       cards: d.cards.map(cardOf),
     })),
     sigils: raw.sigils.map((s) => ({
       id: s.id,
       madeAt: msOf(s.madeAt),
       phrase: s.phrase,
-      movingLines: num(s.movingLines),
+      movingLines: movingLinesOf(s.movingLines),
       overridden: s.overridden,
     })),
     notes: raw.notes.map((n) => ({
@@ -288,7 +299,7 @@ export async function seal(input: {
   const entry: Seal = {
     readingId: num(raw.readingId),
     sealedAt: msOf(raw.sealedAt),
-    movingLines: num(raw.movingLines),
+    movingLines: movingLinesOf(raw.movingLines),
     kameaOrder: num(raw.kameaOrder),
     cards: raw.cards.map(cardOf),
   };
@@ -322,7 +333,7 @@ export async function saveDraw(input: {
   const entry: Draw = {
     id: raw.id,
     drawnAt: msOf(raw.drawnAt),
-    movingLines: num(raw.movingLines),
+    movingLines: movingLinesOf(raw.movingLines),
     cards: raw.cards.map(cardOf),
   };
   patch((j) => ({ ...j, draws: [...j.draws, entry] }));
@@ -349,7 +360,7 @@ export async function saveSigil(input: {
     id: raw.id,
     madeAt: msOf(raw.madeAt),
     phrase: raw.phrase,
-    movingLines: num(raw.movingLines),
+    movingLines: movingLinesOf(raw.movingLines),
     overridden: raw.overridden,
   };
   patch((j) => ({ ...j, sigils: [...j.sigils, entry] }));
