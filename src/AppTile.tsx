@@ -11,6 +11,8 @@ import type { View } from "./App";
 import { draw, newNonce, type DrawnCard } from "./tarot";
 import { saveTarotPull } from "./tarot_store";
 import { castSky, castSkyLine, moonSignIndex } from "./sky_core";
+import { downloadSvg } from "./svg_export";
+import { Rite, type Stage } from "./Rite";
 import { electedOrder } from "./sigil_core";
 import { journalCache, loadJournal, markCastLocally, seal as sealCast, type Seal } from "./backend";
 import "./style.scss";
@@ -68,6 +70,23 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
   /// and the whole thing becomes one journal entry. Null until sealed.
   const [sealed, setSealed] = useState<Seal | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const cardsRef = useRef<HTMLElement | null>(null);
+  const sigilRef = useRef<HTMLElement | null>(null);
+
+  /// A stage that has just appeared is almost always below the fold, and the
+  /// page used to say nothing about it — you had to discover the next step by
+  /// scrolling. Bring it into view instead. Honours reduced-motion, which the
+  /// rest of the app already respects.
+  function reveal(node: HTMLElement | null) {
+    if (!node) return;
+    const still = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    )?.matches;
+    node.scrollIntoView({
+      behavior: still ? "auto" : "smooth",
+      block: "start",
+    });
+  }
 
   /// Chain-random on the reading; browser-random on the nonce. Kept in memory
   /// only — a pull is not a thing that happened until the sigil seals it, and
@@ -95,20 +114,28 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
     // moving lines and the sign the Moon stood in when the question was
     // asked. Recorded on the seal so the artifact is fixed for good.
     const castAt = new Date(Number(reading.timestamp / 1_000_000n));
-    const entry = await sealCast({
-      readingId: Number(reading.id),
-      movingLines: reading.changingLines.length,
-      kameaOrder: electedOrder(
-        reading.changingLines.length,
-        moonSignIndex(castAt),
-      ),
-      cards: pull.map((d) => ({
-        cardIndex: d.card.index,
-        reversed: d.reversed,
-        position: d.position,
-      })),
-    });
-    setSealed(entry);
+    try {
+      const entry = await sealCast({
+        readingId: Number(reading.id),
+        movingLines: reading.changingLines.length,
+        kameaOrder: electedOrder(
+          reading.changingLines.length,
+          moonSignIndex(castAt),
+        ),
+        cards: pull.map((d) => ({
+          cardIndex: d.card.index,
+          reversed: d.reversed,
+          position: d.position,
+        })),
+      });
+      setSealed(entry);
+      // The sigil is created below the fold; go and look at it.
+      setTimeout(() => reveal(sigilRef.current), 60);
+    } catch {
+      // Sealing is the one irreversible act on this page, so a failure has to
+      // say so rather than leaving the button looking inert.
+      setError("The cast could not be sealed. Try again.");
+    }
   }
 
   /// Explicit "clear and start over" so the reader doesn't have to scroll up.
@@ -124,26 +151,13 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
     setTimeout(() => document.getElementById("sf-question")?.focus(), 0);
   }
 
-  /// Downloads the current sigil as an SVG. Vector, preserves the art, tiny
-  /// file — a real artifact of the exact question.
+  /// Downloads the current sigil as an SVG. Vector, tiny file, a real
+  /// artifact of the exact question — and it carries its own colour tokens,
+  /// without which it saves as a perfectly formed blank page.
   function saveSigil() {
-    const svg = document.querySelector(".sf-sigil__art");
+    const svg = document.querySelector<SVGElement>(".sf-sigil__art");
     if (!svg || !reading) return;
-    const svgText = new XMLSerializer().serializeToString(svg);
-    // Standalone SVG needs the xmlns; add it defensively in case the serializer
-    // omitted it on a fragment context.
-    const withNs = svgText.includes("xmlns=")
-      ? svgText
-      : svgText.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
-    const blob = new Blob([withNs], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `cast-away-sigil-${String(reading.id)}.svg`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    downloadSvg(svg, `cast-away-sigil-${String(reading.id)}.svg`);
   }
 
   const [copied, setCopied] = useState(false);
@@ -190,6 +204,9 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
     if (result.relating.length > 0) {
       timers.current.push(setTimeout(() => setTransformed(true), 2400));
     }
+    // The six lines finish at 6 x 260ms; give the verdict a beat to land
+    // before moving, so the answer is read rather than skipped past.
+    timers.current.push(setTimeout(() => reveal(cardsRef.current), 2800));
   }
 
   async function consult() {
@@ -219,6 +236,16 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
   const relating = reading?.relating?.[0] ?? null;
   const showing = transformed && relating ? relating : reading?.primary;
   const settled = revealed === 6;
+
+  /// Where the rite stands, for the spine.
+  const stage: Stage = sealed ? "sigil" : pull.length > 0 ? "cards" : "question";
+  const doneStages: Stage[] = sealed
+    ? ["question", "cards", "sigil"]
+    : pull.length > 0
+      ? ["question", "cards"]
+      : settled
+        ? ["question"]
+        : [];
 
   return (
     <main
@@ -292,10 +319,6 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
 
         {reading && showing && (
           <section className="nt-section sf-reading">
-            <header className="nt-section-header">
-              <h2 className="nt-section-heading">The reading</h2>
-            </header>
-
             <Hexagram
               lines={reading.primary.lines}
               changing={reading.changingLines}
@@ -358,6 +381,8 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
               </div>
             </dl>
 
+            {settled && <Rite at={stage} done={doneStages} />}
+
             <div className="ca-reading-actions" data-shown={settled}>
               {relating && (
                 <button
@@ -386,18 +411,10 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
             They read the intention the question cast; the sigil cannot be
             drawn until they are on the table. */}
         {reading && settled && (
-          <section className="nt-section sf-tarot">
-            <header className="nt-section-header">
-              <h2 className="nt-section-heading">Three cards</h2>
-              {pulls > 1 && !sealed && (
-                <span className="nt-section-count">{pulls}</span>
-              )}
-            </header>
-
+          <section className="nt-section sf-tarot" ref={cardsRef}>
             <p className="nt-muted sf-tarot__intro">
-              The coins have answered. Now three cards read the intention you
-              cast with your question — they say nothing about yes or no, they
-              describe the ground you are standing on.
+              Now three cards read the intention you cast — they say nothing
+              about yes or no, they describe the ground you are standing on.
             </p>
 
             {pull.length === 0 ? (
@@ -422,20 +439,20 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
                     The cast is sealed. These are the cards it keeps.
                   </p>
                 ) : (
-                  <div className="nt-cluster">
+                  <div className="ca-close-rite">
                     <button
                       type="button"
-                      className="nt-button nt-button--ghost"
-                      onClick={rollCards}
+                      className="nt-button nt-button--lg ca-throw-btn"
+                      onClick={() => void drawSigil()}
                     >
-                      Pull again
+                      Seal your intention
                     </button>
                     <button
                       type="button"
-                      className="nt-button"
-                      onClick={() => void drawSigil()}
+                      className="ca-reroll"
+                      onClick={rollCards}
                     >
-                      Draw your sigil
+                      or pull again
                     </button>
                   </div>
                 )}
@@ -447,11 +464,9 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
         {/* The sigil closes the cast. Drawing it sealed the pull above and
             wrote the whole thing to the journal. */}
         {reading && sealed && (
-          <section className="nt-section sf-sigil-section">
-            <header className="nt-section-header">
-              <h2 className="nt-section-heading">The sigil</h2>
-            </header>
-            <div className="ca-sigil-block" data-shown={true}>
+          <section className="nt-section sf-sigil-section" ref={sigilRef}>
+            <div className="ca-sigil-panel" data-shown={true}>
+              <div className="ca-sigil-block" data-shown={true}>
               <Sigil
                 phrase={reading.question}
                 movingLines={reading.changingLines.length}
@@ -465,18 +480,19 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
                   reversed: c.reversed,
                 }))}
               />
-              {/* No prose here. The sigil carries the moment; how it is
-                  constructed is documented in FAQ §9 for anyone who wants
-                  the method. */}
-            </div>
-            <div className="ca-reading-actions">
-              <button
-                type="button"
-                className="nt-button nt-button--ghost"
-                onClick={saveSigil}
-              >
-                Save the sigil
-              </button>
+                {/* No prose here. The sigil carries the moment; how it is
+                    constructed is documented in FAQ §9 for anyone who wants
+                    the method. */}
+              </div>
+              <div className="ca-reading-actions">
+                <button
+                  type="button"
+                  className="nt-button nt-button--ghost"
+                  onClick={saveSigil}
+                >
+                  Save the sigil
+                </button>
+              </div>
             </div>
           </section>
         )}

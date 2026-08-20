@@ -3,6 +3,8 @@ import type { View } from "./App";
 import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 import { Bibliography } from "./Bibliography";
+import { Summary } from "./Summary";
+import { Legend } from "./Legend";
 
 /// Technical documentation of the whole pipeline. Every constant,
 /// threshold, and formula in the app is here, with worked examples and
@@ -12,10 +14,13 @@ import { Bibliography } from "./Bibliography";
 /// descends from. Every system in the app has both — a formula and a source —
 /// so they sit side by side rather than one being an appendix to the other.
 
-type Panel = "math" | "sources";
+type Panel = "summary" | "legend" | "math" | "sources";
 
 export default function Faq({ goTo }: { goTo: (v: View) => void }) {
-  const [panel, setPanel] = useState<Panel>("math");
+  // Summary first: it is the way in. The math panel is the reference and
+  // the bibliography the provenance, and both read better once you know what
+  // the thing actually does.
+  const [panel, setPanel] = useState<Panel>("summary");
 
   return (
     <main className="nt-app nt-app--fill cast-away">
@@ -24,6 +29,24 @@ export default function Faq({ goTo }: { goTo: (v: View) => void }) {
         <Masthead current="faq" goTo={goTo} />
 
         <div className="ca-subtabs" role="tablist" aria-label="FAQ sections">
+          <button
+            type="button"
+            role="tab"
+            className={`ca-tab${panel === "summary" ? " is-active" : ""}`}
+            aria-selected={panel === "summary"}
+            onClick={() => setPanel("summary")}
+          >
+            Summary
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={`ca-tab${panel === "legend" ? " is-active" : ""}`}
+            aria-selected={panel === "legend"}
+            onClick={() => setPanel("legend")}
+          >
+            Legend
+          </button>
           <button
             type="button"
             role="tab"
@@ -44,6 +67,8 @@ export default function Faq({ goTo }: { goTo: (v: View) => void }) {
           </button>
         </div>
 
+        {panel === "summary" && <Summary />}
+        {panel === "legend" && <Legend />}
         {panel === "sources" && <Bibliography />}
 
         <div className="ca-faq" hidden={panel !== "math"}>

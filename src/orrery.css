@@ -1,16 +1,20 @@
 /* Cast Away — orrery.css
-   Brass instrument on the app's dark ground. Built inside the design-system
-   rules: the Sun glow is concentric opacity rings (no banned paint types),
-   type is default-tracked local monospace, and nothing draws a frame.
+   Brass instrument. Built inside the design-system rules: the Sun glow is
+   concentric opacity rings (no banned paint types), type is default-tracked
+   local monospace, and nothing draws a frame.
 
-   Palette mirrors the deck. Re-point these four custom properties at the
-   real --sf-* tokens in one place and everything follows. */
+   The four palette properties were hardcoded for a dark ground, which is
+   exactly what this comment used to invite fixing: "re-point these at the
+   real --sf-* tokens and everything follows." Until that happened the
+   readout — "Select a wanderer" — was near-white text painted on the light
+   theme's paper, i.e. invisible. They now follow the theme, so the orrery
+   works on both grounds and the fallbacks keep it standalone. */
 
 .orrery {
-  --orrery-gold: #c79a4b;   /* map to your --sf-* accent  */
-  --orrery-bone: #e9e2d2;   /* map to your --sf-* ink     */
-  --orrery-dim:  #8e8878;   /* map to your --sf-* muted   */
-  --orrery-line: #2a3247;   /* map to your --sf-* line    */
+  --orrery-gold: var(--sf-accent, #c79a4b);
+  --orrery-bone: var(--nt-text, #e9e2d2);
+  --orrery-dim:  var(--nt-text-muted, #8e8878);
+  --orrery-line: var(--nt-line-subtle, #2a3247);
 
   aspect-ratio: 1 / 1;
   max-width: 100%;

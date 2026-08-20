@@ -48,6 +48,9 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
   const [pull, setPull] = useState<Pull | null>(null);
   const [confirmingReshuffle, setConfirmingReshuffle] = useState(false);
   const [busy, setBusy] = useState(false);
+  /// A refused or failed canister call used to do nothing visible at all —
+  /// the button simply stopped working with no explanation.
+  const [error, setError] = useState<string | null>(null);
 
   // The deck outlives the visit, and lives on the canister. A deck that fails
   // validation loads as null, which simply offers a fresh shuffle.
@@ -66,6 +69,7 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
   async function drawCards() {
     if (!deck || !canDraw(deck) || busy) return;
     setBusy(true);
+    setError(null);
     try {
       const { drawn, next } = drawThree(deck);
       const drawnAt = new Date();
@@ -83,7 +87,10 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
       // Advance first. If the canister refuses the cursor the draw never
       // happened, so the reader is not shown cards the deck did not spend.
       const moved = await store.advance(next.cursor);
-      if (!moved) return;
+      if (!moved) {
+        setError("The deck would not turn. Reload and try again.");
+        return;
+      }
 
       setDeck(next);
       setPull({ cards, drawnAt, movingLines });
@@ -96,6 +103,8 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
           position: d.position,
         })),
       });
+    } catch {
+      setError("Could not reach the deck. Try again.");
     } finally {
       setBusy(false);
     }
@@ -104,11 +113,14 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
   async function doReshuffle() {
     if (busy) return;
     setBusy(true);
+    setError(null);
     try {
       const next = await store.shuffle(freshDeck().seed);
       setDeck(next);
       setPull(null);
       setConfirmingReshuffle(false);
+    } catch {
+      setError("Could not shuffle. Try again.");
     } finally {
       setBusy(false);
     }
@@ -144,6 +156,12 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
               </span>
             )}
           </header>
+
+          {error && (
+            <div className="nt-alert nt-alert--danger ca-deck-error" role="alert">
+              {error}
+            </div>
+          )}
 
           {loading ? (
             <p className="ca-deck-meta">Finding your deck…</p>

@@ -3,6 +3,7 @@ import { Sigil } from "./Sigil";
 import { Masthead } from "./Masthead";
 import { Footer } from "./Footer";
 import { saveSigil as saveSigilEntry } from "./backend";
+import { downloadSvg } from "./svg_export";
 import type { View } from "./App";
 import "./style.scss";
 
@@ -33,32 +34,25 @@ function autoElection(phrase: string): number {
 }
 
 function saveSigilSVG(phrase: string): void {
-  const svg = document.querySelector(".sf-sigil__art");
+  const svg = document.querySelector<SVGElement>(".sf-sigil__art");
   if (!svg) return;
-  const text = new XMLSerializer().serializeToString(svg);
-  const withNs = text.includes("xmlns=")
-    ? text
-    : text.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
-  const blob = new Blob([withNs], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
   const slug = phrase
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40) || "sigil";
-  a.download = `cast-away-${slug}.svg`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  downloadSvg(svg, `cast-away-${slug}.svg`);
 }
 
 export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
   const [phrase, setPhrase] = useState("");
   const [override, setOverride] = useState<number | null>(null);
-  const [journaled, setJournaled] = useState(false);
+  /// idle | saved | failed. It used to be a bare boolean set the instant the
+  /// button was pressed, before the canister had answered and regardless of
+  /// what it answered — so a failed write still told the reader "saved".
+  const [saveState, setSaveState] = useState<"idle" | "saved" | "failed">(
+    "idle",
+  );
 
   /// The live preview has no `madeAt` yet, so it is stamped with the moment
   /// the page was opened — the auspice you would be making under. Saving to
@@ -69,17 +63,21 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
   const auto = useMemo(() => autoElection(trimmed.toLowerCase()), [trimmed]);
   const movingLines = override ?? auto;
 
-  function toJournal() {
+  async function toJournal() {
     if (!trimmed) return;
-    // The canister stamps the time, so there is nothing to pass and nothing
-    // a caller could backdate.
-    void saveSigilEntry({
-      phrase: trimmed,
-      movingLines,
-      overridden: override !== null,
-    });
-    setJournaled(true);
-    setTimeout(() => setJournaled(false), 1600);
+    try {
+      // The canister stamps the time, so there is nothing to pass and nothing
+      // a caller could backdate.
+      await saveSigilEntry({
+        phrase: trimmed,
+        movingLines,
+        overridden: override !== null,
+      });
+      setSaveState("saved");
+    } catch {
+      setSaveState("failed");
+    }
+    setTimeout(() => setSaveState("idle"), 2200);
   }
 
   return (
@@ -150,7 +148,7 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
                 <button
                   type="button"
                   className="nt-button nt-button--ghost"
-                  onClick={toJournal}
+                  onClick={() => void toJournal()}
                 >
                   Save to journal
                 </button>
@@ -169,9 +167,16 @@ export default function SigilPage({ goTo }: { goTo: (v: View) => void }) {
         <Footer />
       </div>
 
-      {journaled && (
-        <div className="ca-toast" role="status" aria-live="polite">
-          Sigil saved to your journal
+      {saveState !== "idle" && (
+        <div
+          className="ca-toast"
+          role="status"
+          aria-live="polite"
+          data-tone={saveState === "failed" ? "bad" : undefined}
+        >
+          {saveState === "saved"
+            ? "Sigil saved to your journal"
+            : "Could not save. Try again."}
         </div>
       )}
     </main>

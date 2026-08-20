@@ -1127,6 +1127,102 @@
       }
     }
 
+    // The summary reads as an essay rather than a reference, so it gets a
+    // comfortable measure and a little more air between paragraphs.
+    .ca-summary .nt-text {
+      max-width: 66ch;
+    }
+
+    .ca-summary .nt-text + .nt-text {
+      margin-top: 16px;
+    }
+
+    // ================================================================ legend
+    //
+    // All 64, as a reference list. Two columns where there is room; the glyph
+    // carries the weight so the names can stay quiet.
+
+    .ca-legend-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2px 24px;
+      list-style: none;
+      margin: 0 0 24px;
+      padding: 0;
+      counter-reset: none;
+    }
+
+    .ca-legend-row {
+      display: grid;
+      grid-template-columns: 34px 26px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 8px;
+      border-radius: var(--nt-radius-2, 2px);
+    }
+
+    .ca-legend-row:nth-child(odd) {
+      background: var(--nt-bg-elevated);
+    }
+
+    .ca-legend-glyph {
+      font-size: 26px;
+      line-height: 1;
+      color: var(--nt-accent);
+      text-align: center;
+    }
+
+    .ca-legend-n {
+      font-size: 11px;
+      color: var(--nt-text-faint);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ca-legend-names {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .ca-legend-english {
+      font-size: 13px;
+      color: var(--nt-text-strong);
+      letter-spacing: 0;
+    }
+
+    .ca-legend-pinyin {
+      font-family: Baskerville, "Palatino Linotype", "Book Antiqua", Georgia,
+        serif;
+      font-style: italic;
+      font-size: 12px;
+      color: var(--nt-text-muted);
+      letter-spacing: 0;
+    }
+
+    .ca-legend-trigrams {
+      font-size: 11px;
+      color: var(--nt-text-faint);
+      white-space: nowrap;
+      letter-spacing: 0;
+    }
+
+    @media (max-width: 720px) {
+      .ca-legend-list {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 420px) {
+      .ca-legend-row {
+        grid-template-columns: 30px 22px 1fr;
+      }
+
+      .ca-legend-trigrams {
+        display: none;
+      }
+    }
+
     // ============================================================ bibliography
     //
     // Denser than the math panel: each entry is a short block of prose rather
@@ -1144,6 +1240,156 @@
       margin-top: 10px;
     }
 
+    // ================================================================ the rite
+    //
+    // Three stages: question, cards, sigil. Before this the page was a
+    // sequence that never admitted it was one — each stage was an ordinary
+    // section, so the only way to learn a second existed was to scroll.
+
+    .ca-rite {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0;
+      list-style: none;
+      margin: 24px auto 0;
+      padding: 0;
+      max-width: 420px;
+    }
+
+    .ca-rite__step {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex: 1 1 0;
+      justify-content: center;
+      color: var(--nt-text-faint);
+      font-size: 12px;
+      letter-spacing: 0;
+      position: relative;
+    }
+
+    // The thread between the marks, drawn behind them.
+    .ca-rite__step + .ca-rite__step::before {
+      content: "";
+      position: absolute;
+      left: -50%;
+      right: 50%;
+      top: 11px;
+      height: 1px;
+      background: var(--nt-line-subtle);
+    }
+
+    .ca-rite__mark {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: var(--nt-bg);
+      box-shadow: inset 0 0 0 1px var(--nt-line-subtle);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .ca-rite__label {
+      position: relative;
+      z-index: 1;
+      background: var(--nt-bg);
+      padding-right: 2px;
+    }
+
+    .ca-rite__step.is-done {
+      color: var(--nt-text-muted);
+    }
+
+    .ca-rite__step.is-done .ca-rite__mark {
+      color: var(--nt-accent);
+      box-shadow: inset 0 0 0 1px var(--nt-accent);
+    }
+
+    .ca-rite__step.is-here {
+      color: var(--nt-text-strong);
+    }
+
+    .ca-rite__step.is-here .ca-rite__mark {
+      color: var(--nt-text-inverse, var(--nt-bg));
+      background: var(--nt-accent);
+      box-shadow: none;
+    }
+
+    // The closing act. The sigil is the payoff, so its button is the loudest
+    // thing on the page and the re-roll steps down to a quiet link — the
+    // reverse of how they were weighted, where the climax was a default
+    // button sitting beside a ghost.
+    .ca-close-rite {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .ca-reroll {
+      appearance: none;
+      background: none;
+      border: 0;
+      padding: 4px 6px;
+      cursor: pointer;
+      font-size: 12px;
+      letter-spacing: 0;
+      color: var(--nt-text-muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .ca-reroll:hover {
+      color: var(--nt-text);
+    }
+
+    // The sigil arrives in its own plate, set off by a rule above it. Inset
+    // hairlines rather than a framing border, same primitive as the masthead.
+    .ca-sigil-panel {
+      background: var(--nt-bg-elevated);
+      border-radius: var(--nt-radius-panel, 4px);
+      padding: 24px 20px 18px;
+      margin-top: 8px;
+      box-shadow:
+        var(--nt-shadow-hairline),
+        inset 0 -1px var(--nt-line-subtle);
+    }
+
+    .sf-sigil-section {
+      position: relative;
+      padding-top: 28px;
+    }
+
+    // The rule that separates the cards from the sigil.
+    .sf-sigil-section::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 72px;
+      height: 1px;
+      background: var(--nt-accent);
+      opacity: 0.5;
+    }
+
+    @media (max-width: 480px) {
+      .ca-rite {
+        gap: 0;
+      }
+
+      .ca-rite__label {
+        display: none;
+      }
+    }
+
     // The Mansion of the Moon a sigil was made under. Sits under the square's
     // order and constant, in the same engraved register as the presiding line.
     .ca-sigil-mansion {
@@ -1157,6 +1403,16 @@
       color: var(--nt-text-muted);
       margin-top: 4px;
       max-width: 34ch;
+    }
+
+    .ca-deck-error {
+      max-width: 420px;
+      margin: 0 auto 16px;
+    }
+
+    // The toast turns when it is carrying bad news.
+    .ca-toast[data-tone="bad"] {
+      color: var(--nt-danger);
     }
 
     // Tarot page — the deck's own status line. Always visible once a deck
@@ -1447,6 +1703,13 @@
     // rather than swapping palettes out from under the reader.
     --ca-bg-reading: #e2d6b8;
 
+    // Emboss for the splash wordmark: paper-highlight above, ink below.
+    --ca-emboss:
+      0 1px 0 rgba(255, 255, 255, 0.65),
+      0 -1px 0 rgba(0, 0, 0, 0.08),
+      0 2px 4px rgba(0, 0, 0, 0.22),
+      0 4px 10px rgba(0, 0, 0, 0.1);
+
     background: var(--nt-bg);
     color: var(--nt-text);
   }
@@ -1454,6 +1717,13 @@
   :root[data-ca-theme="dark"] .nt-app.cast-away {
     color-scheme: dark;
     --ca-bg-reading: #020406;
+
+    // On a dark ground the emboss inverts: a whisper of light above the
+    // letterform, depth below. The paper values would read as chalk dust.
+    --ca-emboss:
+      0 1px 0 rgba(255, 255, 255, 0.07),
+      0 -1px 0 rgba(0, 0, 0, 0.5),
+      0 2px 6px rgba(0, 0, 0, 0.55);
 
     background: var(--nt-bg);
     color: var(--nt-text);
@@ -1654,14 +1924,13 @@
     // Stay on a single line — CAST AWAY reads as one mark, not two.
     white-space: nowrap;
     margin: 0;
-    color: #1e1a15;
+    color: var(--nt-text-strong);
     text-align: center;
-    // Embossed: paper-highlight above, ink shadow below.
-    text-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.65),
-      0 -1px 0 rgba(0, 0, 0, 0.08),
-      0 2px 4px rgba(0, 0, 0, 0.22),
-      0 4px 10px rgba(0, 0, 0, 0.10);
+    // Embossed: a highlight above, a shadow below. Both were tuned for paper
+    // and hardcoded, which was fine while the splash was always light — it no
+    // longer is, so they follow the theme too. The dark ground takes a much
+    // fainter highlight or the letters look chalky.
+    text-shadow: var(--ca-emboss);
   }
 
   @media (max-width: 520px) {
@@ -1673,7 +1942,7 @@
       serif;
     font-style: italic;
     font-size: 17px;
-    color: #4a4238;
+    color: var(--nt-text-muted);
     text-align: center;
     letter-spacing: 0;
     margin: -6px 0 0;
@@ -1695,7 +1964,6 @@
     letter-spacing: 0;
   }
 
-  // Splash "doors" — primary ENTER above, secondary "Draw a sigil" below.
   // ============================================================ SIGIL PAGE
   //
   // The standalone sigil generator. Textarea sits above the rendered sigil;
