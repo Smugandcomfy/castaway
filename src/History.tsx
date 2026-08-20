@@ -9,6 +9,7 @@ import type { View } from "./App";
 import { DECK, type DrawnCard } from "./tarot";
 import { loadTarotPulls } from "./tarot_store";
 import { castSky, castSkyLine } from "./sky_core";
+import { reason } from "./reason";
 import {
   clearAll,
   loadReadings,
@@ -44,7 +45,7 @@ interface Reading {
   question: string;
   timestamp: string;
   primary: HexagramData;
-  relating: HexagramData[];
+  relating: HexagramData | null;
   changingLines: string[];
   tier: Record<Tier, null>;
   answer: string;
@@ -179,18 +180,18 @@ export default function History({ goTo }: { goTo: (v: View) => void }) {
       setTarotEntries([]);
       setSigilEntries([]);
       setSeals([]);
-    } catch {
-      setError("Could not clear the journal. Try again.");
+    } catch (e) {
+      setError(`Could not clear the journal. Try again.${reason(e)}`);
     }
   }
 
   async function removeLocal(id: string) {
     try {
       await deleteEntry(id);
-    } catch {
+    } catch (e) {
       // The rows are only dropped after the canister confirms, so a failure
       // here left the entry on screen and the button looking inert.
-      setError("Could not delete that entry. Try again.");
+      setError(`Could not delete that entry. Try again.${reason(e)}`);
       return;
     }
     setTarotEntries((s) => s.filter((e) => e.id !== id));

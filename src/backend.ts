@@ -134,9 +134,16 @@ const cardOf = (c: {
   position: c.position,
 });
 
-/// Candid `?T` is `[]` or `[value]`.
-const optOf = <A, B>(o: A[] | undefined, f: (a: A) => B): B | null =>
-  o && o.length > 0 ? f(o[0]) : null;
+/// Candid `?T` arrives as `null` or the bare value — the kernel normalises
+/// optionals into JSON rather than the agent's `[]` / `[value]` convention.
+/// `apps/chess` reads its `?Text` fields as `value === undefined || null`.
+/// The array form is still accepted so a change of convention degrades to a
+/// missing value rather than a crash.
+const optOf = <A, B>(o: A | A[] | null | undefined, f: (a: A) => B): B | null => {
+  if (o === null || o === undefined) return null;
+  if (Array.isArray(o)) return o.length > 0 ? f(o[0]) : null;
+  return f(o);
+};
 
 // --------------------------------------------------------------- the journal
 //
@@ -176,11 +183,11 @@ async function fetchJournal(): Promise<Journal> {
           cursor: string | bigint | number;
           epoch: string | bigint | number;
           shuffledAt: string | bigint | number;
-        }[]
-      | undefined;
+        }
+      | null;
     flags: { entered: boolean; hasCast: boolean };
-    place: string[] | undefined;
-    theme: string[] | undefined;
+    place: string | null;
+    theme: string | null;
   }>("journal");
 
   const journal: Journal = {

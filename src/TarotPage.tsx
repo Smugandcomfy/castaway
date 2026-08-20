@@ -17,6 +17,7 @@ import { presidingKamea } from "./sigil_core";
 import { conditionLine, planetKeyOf, presidingCondition } from "./presiding";
 import { saveDraw } from "./backend";
 import type { View } from "./App";
+import { reason } from "./reason";
 import "./style.scss";
 
 /// Standalone tarot: no coins, no question, no reading — and, unlike the
@@ -111,8 +112,8 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
           position: d.position,
         })),
       });
-    } catch {
-      setError("Could not reach the deck. Try again.");
+    } catch (e) {
+      setError(`Could not reach the deck. Try again.${reason(e)}`);
     } finally {
       setBusy(false);
     }
@@ -127,8 +128,8 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
       setDeck(next);
       setPull(null);
       setConfirmingReshuffle(false);
-    } catch {
-      setError("Could not shuffle. Try again.");
+    } catch (e) {
+      setError(`Could not shuffle. Try again.${reason(e)}`);
     } finally {
       setBusy(false);
     }

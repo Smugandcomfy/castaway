@@ -124,7 +124,8 @@ function cast(question: string) {
     question,
     timestamp: nowNat(),
     primary,
-    relating: relatingLines ? [describe(relatingLines)] : [],
+    // Candid `?T` is null-or-value on this wire, not the agent's [] / [v].
+    relating: relatingLines ? describe(relatingLines) : null,
     changingLines: changingLines.map(nat),
     tier: { [tier]: null },
     answer: pool[(Number(primary.number) - 1) % pool.length],
@@ -188,10 +189,10 @@ function dispatch(method: string, args: any[]) {
             draws,
             sigils,
             notes,
-            deck: deck ? [deck] : [],
+            deck: deck ?? null,
             flags,
-            place: place ? [place] : [],
-            theme: theme ? [theme] : [],
+            place: place ?? null,
+            theme: theme ?? null,
           };
         case "seal": {
           const [readingId, movingLines, kameaOrder, cards] = args;

@@ -13,6 +13,7 @@ import { castSky, castSkyLine, moonSignIndex } from "./sky_core";
 import { downloadSvg } from "./svg_export";
 import { Rite, type Stage } from "./Rite";
 import { electedOrder } from "./sigil_core";
+import { reason } from "./reason";
 import {
   consultOracle,
   journalCache,
@@ -45,7 +46,8 @@ interface Reading {
   question: string;
   timestamp: string;
   primary: HexagramData;
-  relating: HexagramData[]; // Candid opt arrives as [] or [value]
+  /// Candid `?Hexagram`: the bare value, or null when nothing is moving.
+  relating: HexagramData | null;
   changingLines: string[];
   tier: Record<Tier, null>;
   answer: string;
@@ -142,10 +144,10 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
       setSealed(entry);
       // The sigil is created below the fold; go and look at it.
       setTimeout(() => reveal(sigilRef.current), 60);
-    } catch {
+    } catch (e) {
       // Sealing is the one irreversible act on this page, so a failure has to
       // say so rather than leaving the button looking inert.
-      setError("The cast could not be sealed. Try again.");
+      setError(`The cast could not be sealed. Try again.${reason(e)}`);
     }
   }
 
@@ -211,7 +213,10 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
     for (let i = 1; i <= 6; i++) {
       timers.current.push(setTimeout(() => setRevealed(i), i * 260));
     }
-    if (result.relating.length > 0) {
+    // `relating` is null whenever nothing is moving. Reading `.length` off it
+    // threw, and the throw landed in consult's catch — so a perfectly good
+    // reading reported that the canister had not answered.
+    if (result.relating) {
       timers.current.push(setTimeout(() => setTransformed(true), 2400));
     }
     // Deliberately no scroll here. The answer is the thing the reader came
@@ -237,15 +242,15 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
         markCastLocally();
         setHasCastBefore(true);
       }
-    } catch {
-      setError("The canister did not answer. Try throwing again.");
+    } catch (e) {
+      setError(`The cast did not complete. Try throwing again.${reason(e)}`);
     } finally {
       setCasting(false);
     }
   }
 
   const tier = reading ? tierOf(reading) : null;
-  const relating = reading?.relating?.[0] ?? null;
+  const relating = reading?.relating ?? null;
   const showing = transformed && relating ? relating : reading?.primary;
   const settled = revealed === 6;
 
