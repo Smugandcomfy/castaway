@@ -154,8 +154,13 @@ of this.
 
 ## License
 
-`LicenseRef-Neutron-Sovereign-Application-License-1.0`. See the Neutron
-repo for terms.
+Neutron Sovereign Application License, Version 1.0 —
+`LicenseRef-Neutron-Sovereign-Application-License-1.0`. The full text is in
+[`LICENSE`](LICENSE); [`NOTICE`](NOTICE) applies it to this application.
+
+Not an OSI-approved open source licence. Provider-operated Production Use is
+permitted only in a Qualifying Sovereign System; private personal use is
+protected by sections 2 and 3.
 
 ---
 
