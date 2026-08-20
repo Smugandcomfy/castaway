@@ -112,31 +112,65 @@ module {
     let entropy = env.capabilities.randomness;
 
     let MAX_QUESTION_CHARS = 500;
-    let MAX_HISTORY = 200;
 
     // Every collection is capped and drops oldest-first. The canister is the
     // owner's own, but a stuck finger on a button should still not be able to
     // grow it without bound.
-    let MAX_SEALS = 200;
-    let MAX_DRAWS = 200;
-    let MAX_SIGILS = 200;
-    let MAX_NOTES = 400;
-    let MAX_NOTE_CHARS = 2000;
-    let MAX_PHRASE_CHARS = 500;
-    let MAX_PLACE_CHARS = 120;
+    //
+    // The ceiling is not storage, it is the *reply*. A self-call reply is
+    // scanned against two cumulative budgets before the tile ever sees it:
+    // `SELF_CALL_CANDID_MAX_CONTAINER_ELEMENTS` = 4096 counted across the whole
+    // value, and `SELF_CALL_METADATA_MAX_BYTES` = 64 KiB of projected JSON
+    // (apps/kernel/src/self_calls.ts:22, :496-501, :1773). Exceed either and
+    // the query throws -- permanently, since it throws on every mount, and
+    // `journal` is called on every mount.
+    //
+    // Counting the way the scanner does (a record costs its field count, a vec
+    // costs its length, both recurse), a journal costs about
+    // `14 + 18·seals + 17·draws + 6·sigils + 4·notes` elements. The old caps of
+    // 200/200/200/400 came to 9,817 -- more than twice the limit -- so the
+    // journal was going to stop loading for good at roughly a hundred entries.
+    // These caps hold the worst case near 1,540 elements and 49 KiB, and
+    // `test/backend.test.mo` asserts both against a saturated journal rather
+    // than leaving the arithmetic in a comment.
+    let MAX_HISTORY = 50;
+    let MAX_SEALS = 40;
+    let MAX_DRAWS = 40;
+    let MAX_SIGILS = 15;
+    let MAX_NOTES = 20;
     let DECK_SIZE = 78;
     let DRAW_SIZE = 3;
+
+    // Text caps are in **bytes**, not characters, because that is the unit both
+    // kernel budgets are denominated in. `Text.size` counts characters, and a
+    // character is up to four UTF-8 bytes -- so a cap of "800 characters" is a
+    // cap of 3,200 bytes if the reader writes in emoji or CJK, and the byte
+    // budget is then blown by a journal that looks well inside its limits.
+    let MAX_QUESTION_BYTES = 500;
+    let MAX_NOTE_BYTES = 600;
+    let MAX_PHRASE_BYTES = 500;
+    let MAX_PLACE_BYTES = 120;
+    // A position is "past" / "present" / "future"; a seed is 32 hex characters.
+    // Both are bounded because the wire type says `Text` and means it.
+    let MAX_POSITION_BYTES = 32;
+    let MAX_SEED_BYTES = 64;
+    let MAX_ID_BYTES = 64;
+
+    // A pull is three cards, and the wire type does not say so. An unbounded
+    // `[Card]` is the one input that can blow the reply budget from a single
+    // call, so it is bounded here rather than trusted.
+    let MAX_CARDS = 3;
 
     /// Asks the coins. Update, because brokered entropy is an await.
     ///
     /// Declared in `preapproved_self_calls` so a throw does not raise a kernel
     /// approval dialog every time -- without that, the app is unusable.
     public func /*update*/ consult(question : Text) : async* ConsultResult {
-      let trimmed = Text.trim(question, #char ' ');
+      let trimmed = Text.trim(question, #predicate blank);
       if (Text.size(trimmed) == 0) {
         return #err("Ask a question first.");
       };
-      if (Text.size(trimmed) > MAX_QUESTION_CHARS) {
+      if (Text.encodeUtf8(trimmed).size() > MAX_QUESTION_BYTES) {
         return #err("Keep the question under 500 characters.");
       };
 
@@ -213,8 +247,8 @@ module {
       let entry : Seal = {
         readingId;
         sealedAt = Time.now();
-        movingLines;
-        cards;
+        movingLines = boundMovingLines(movingLines);
+        cards = boundCards(cards);
         kameaOrder = order;
       };
       let others = Array.filter<Seal>(mem.seals, func(s) { s.readingId != readingId });
@@ -227,8 +261,8 @@ module {
       let entry : Draw = {
         id = "draw-" # Nat.toText(mem.nextEntryId);
         drawnAt = Time.now();
-        movingLines;
-        cards;
+        movingLines = boundMovingLines(movingLines);
+        cards = boundCards(cards);
       };
       mem.nextEntryId += 1;
       mem.draws := Memory.append<Draw>(mem.draws, entry, MAX_DRAWS);
@@ -240,8 +274,8 @@ module {
       let entry : SigilEntry = {
         id = "sigil-" # Nat.toText(mem.nextEntryId);
         madeAt = Time.now();
-        phrase = truncate(phrase, MAX_PHRASE_CHARS);
-        movingLines;
+        phrase = truncate(phrase, MAX_PHRASE_BYTES);
+        movingLines = boundMovingLines(movingLines);
         overridden;
       };
       mem.nextEntryId += 1;
@@ -252,13 +286,14 @@ module {
     /// Attach, replace, or (with an empty body) remove a note.
     public func /*update*/ set_note(entryId : Text, body : Text) : () {
       let others = Array.filter<Note>(mem.notes, func(n) { n.entryId != entryId });
-      if (Text.size(Text.trim(body, #char ' ')) == 0) {
+      let trimmedBody = Text.trim(body, #predicate blank);
+      if (Text.size(trimmedBody) == 0) {
         mem.notes := others;
         return;
       };
       let entry : Note = {
-        entryId;
-        body = truncate(body, MAX_NOTE_CHARS);
+        entryId = truncate(entryId, MAX_ID_BYTES);
+        body = truncate(trimmedBody, MAX_NOTE_BYTES);
         updatedAt = Time.now();
       };
       mem.notes := Memory.append<Note>(others, entry, MAX_NOTES);
@@ -280,7 +315,7 @@ module {
     public func /*update*/ shuffle_deck(seed : Text) : Deck {
       let prevEpoch = switch (mem.deck) { case (?d) d.epoch; case null 0 };
       let next : Deck = {
-        seed;
+        seed = truncate(seed, MAX_SEED_BYTES);
         cursor = 0;
         epoch = prevEpoch + 1;
         shuffledAt = Time.now();
@@ -320,7 +355,7 @@ module {
     /// Remember which place the Sky page is reading from. Stored by name, so
     /// the frontend's place list remains the authority on coordinates.
     public func /*update*/ set_place(name : Text) : () {
-      mem.place := if (Text.size(name) == 0) null else ?truncate(name, MAX_PLACE_CHARS);
+      mem.place := if (Text.size(name) == 0) null else ?truncate(name, MAX_PLACE_BYTES);
     };
 
     // --------------------------------------------------------------- clear
@@ -340,16 +375,50 @@ module {
       // lives.
     };
 
+    /// Space is not the only whitespace. A question of "\n\n\n" has size 3 and
+    /// sailed straight through an emptiness check that only trimmed spaces.
+    func blank(c : Char) : Bool {
+      c == ' ' or c == '\n' or c == '\t' or c == '\r';
+    };
+
+    /// Keep at most a pull's worth of cards. Same reasoning as `truncate`:
+    /// the caller is the owner, but the bound belongs to the store.
+    func boundCards(cards : [Card]) : [Card] {
+      let kept = if (cards.size() <= MAX_CARDS) cards else Array.sliceToArray<Card>(cards, 0, MAX_CARDS);
+      // `position` is the other half of the bound. The array can be short and
+      // still carry sixty kilobytes of text in one field.
+      Array.map<Card, Card>(
+        kept,
+        func(c) {
+          {
+            cardIndex = if (c.cardIndex >= DECK_SIZE) 0 else c.cardIndex;
+            reversed = c.reversed;
+            position = truncate(c.position, MAX_POSITION_BYTES);
+          };
+        },
+      );
+    };
+
+    /// A moving-line count is 0..6 and a `Nat` is arbitrary precision, so an
+    /// unguarded one is a multi-kilobyte bignum in every reply that returns it.
+    func boundMovingLines(n : Nat) : Nat = if (n > 6) 0 else n;
+
     /// Text arrives from a single trusted owner, but bounded storage is a
     /// property of the schema rather than of good behaviour.
-    func truncate(t : Text, cap : Nat) : Text {
-      if (Text.size(t) <= cap) return t;
+    ///
+    /// Counted in UTF-8 bytes. Counting characters instead would agree with
+    /// `Text.size` and disagree with every limit that actually applies, and a
+    /// character is never cut in half here -- the last one that does not fit is
+    /// dropped whole.
+    func truncate(t : Text, capBytes : Nat) : Text {
+      if (Text.encodeUtf8(t).size() <= capBytes) return t;
       var out = "";
       var n = 0;
       for (c in t.chars()) {
-        if (n >= cap) return out;
+        let width = Text.encodeUtf8(Char.toText(c)).size();
+        if (n + width > capBytes) return out;
         out #= Char.toText(c);
-        n += 1;
+        n += width;
       };
       out;
     };

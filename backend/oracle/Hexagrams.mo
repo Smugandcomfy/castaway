@@ -113,7 +113,11 @@ module {
     };
   };
 
+  /// A hexagram is six lines. The table has sixty-four entries, so seven lines
+  /// would index past the end and trap; both callers pass exactly six, but this
+  /// is public and the next caller might not.
   public func kingWen(lines : [Nat]) : Nat {
+    assert (lines.size() == 6);
     var index : Nat = 0;
     var bit : Nat = 1;
     for (line in lines.vals()) {
