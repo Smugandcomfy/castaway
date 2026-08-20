@@ -23,7 +23,12 @@ export function NoteEditor({ entryId }: { entryId: string }) {
     };
     const cached = journalCache();
     if (cached) apply(cached.notes);
-    else void loadJournal().then((j) => apply(j.notes));
+    else
+      void loadJournal()
+        .then((j) => apply(j.notes))
+        .catch(() => {
+          // No note shown; the editor still opens and can write a new one.
+        });
     return () => {
       live = false;
     };

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { createCanisterClient, loadNeutronCanisterId } from "neutron-tools/app";
 import { Hexagram } from "./Hexagram";
 import { TarotCard } from "./TarotCard";
 import { Sigil } from "./Sigil";
@@ -14,7 +13,14 @@ import { castSky, castSkyLine, moonSignIndex } from "./sky_core";
 import { downloadSvg } from "./svg_export";
 import { Rite, type Stage } from "./Rite";
 import { electedOrder } from "./sigil_core";
-import { journalCache, loadJournal, markCastLocally, seal as sealCast, type Seal } from "./backend";
+import {
+  consultOracle,
+  journalCache,
+  loadJournal,
+  markCastLocally,
+  seal as sealCast,
+  type Seal,
+} from "./backend";
 import "./style.scss";
 
 type Tier = "affirmative" | "noncommittal" | "negative";
@@ -48,7 +54,6 @@ const tierOf = (r: Reading) => Object.keys(r.tier)[0] as Tier;
 
 
 export function AppTile({ goTo }: { goTo: (v: View) => void }) {
-  const [client, setClient] = useState<any>(null);
   const [question, setQuestion] = useState("");
   const [reading, setReading] = useState<Reading | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -180,12 +185,11 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
   }
 
   useEffect(() => {
-    (async () => {
-      const c = createCanisterClient(await loadNeutronCanisterId());
-      setClient(c);
-      const journal = await loadJournal();
-      setHasCastBefore(journal.flags.hasCast);
-    })();
+    void loadJournal()
+      .then((journal) => setHasCastBefore(journal.flags.hasCast))
+      .catch(() => {
+        // Only decides whether the first-cast hint shows. Not worth a notice.
+      });
     return () => timers.current.forEach(clearTimeout);
   }, []);
 
@@ -211,13 +215,13 @@ export function AppTile({ goTo }: { goTo: (v: View) => void }) {
   }
 
   async function consult() {
-    if (!client || casting) return;
+    if (casting) return;
     setError(null);
     setCasting(true);
     setReading(null);
     try {
       // Declared in preapproved_self_calls, so this does not open a dialog.
-      const result = await client.call("consult", [question]);
+      const result = await consultOracle(question);
       if ("err" in result) {
         setError(result.err);
       } else {

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { createCanisterClient, loadNeutronCanisterId } from "neutron-tools/app";
 import { Hexagram } from "./Hexagram";
 import { Sigil } from "./Sigil";
 import { TarotCard } from "./TarotCard";
@@ -12,6 +11,7 @@ import { loadTarotPulls } from "./tarot_store";
 import { castSky, castSkyLine } from "./sky_core";
 import {
   clearAll,
+  loadReadings,
   deleteEntry,
   journalCache,
   loadJournal,
@@ -76,7 +76,6 @@ function readingIdFromHash(): string {
 }
 
 export default function History({ goTo }: { goTo: (v: View) => void }) {
-  const [client, setClient] = useState<any>(null);
   const [past, setPast] = useState<Reading[]>([]);
   const [tarotEntries, setTarotEntries] = useState<Draw[]>([]);
   const [sigilEntries, setSigilEntries] = useState<SigilEntry[]>([]);
@@ -87,32 +86,34 @@ export default function History({ goTo }: { goTo: (v: View) => void }) {
   const [highlightId] = useState<string>(readingIdFromHash);
 
   useEffect(() => {
-    (async () => {
-      const c = createCanisterClient(await loadNeutronCanisterId());
-      setClient(c);
-    })();
+    let live = true;
+    void loadReadings()
+      .then((rows) => {
+        if (live) setPast(rows as Reading[]);
+      })
+      .catch(() => {
+        // Otherwise the page reports "Nothing here yet", which is a very
+        // different claim from "could not ask".
+        if (live) setError("Could not load the journal. Try again.");
+      });
+    return () => {
+      live = false;
+    };
   }, []);
-
-  useEffect(() => {
-    if (!client) return;
-    (async () => {
-      try {
-        setPast(await client.call("history", []));
-      } catch {
-        setError("Could not load the journal. Try again.");
-      }
-    })();
-  }, [client]);
 
   // Standalone entries and seals come from managed memory in one query.
   useEffect(() => {
     let live = true;
-    void loadJournal().then((j) => {
-      if (!live) return;
-      setTarotEntries(j.draws);
-      setSigilEntries(j.sigils);
-      setSeals(j.seals);
-    });
+    void loadJournal()
+      .then((j) => {
+        if (!live) return;
+        setTarotEntries(j.draws);
+        setSigilEntries(j.sigils);
+        setSeals(j.seals);
+      })
+      .catch(() => {
+        if (live) setError("Could not reach the journal. Reload to try again.");
+      });
     return () => {
       live = false;
     };
@@ -177,7 +178,14 @@ export default function History({ goTo }: { goTo: (v: View) => void }) {
   }
 
   async function removeLocal(id: string) {
-    await deleteEntry(id);
+    try {
+      await deleteEntry(id);
+    } catch {
+      // The rows are only dropped after the canister confirms, so a failure
+      // here left the entry on screen and the button looking inert.
+      setError("Could not delete that entry. Try again.");
+      return;
+    }
     setTarotEntries((s) => s.filter((e) => e.id !== id));
     setSigilEntries((s) => s.filter((e) => e.id !== id));
   }

@@ -123,9 +123,13 @@ export default function SkyPage({ goTo }: { goTo: (v: View) => void }) {
 
   useEffect(() => {
     let live = true;
-    void loadJournal().then((j) => {
-      if (live && j.place) setPlaceName(j.place);
-    });
+    void loadJournal()
+      .then((j) => {
+        if (live && j.place) setPlaceName(j.place);
+      })
+      .catch(() => {
+        // Greenwich is already selected and is a defensible default.
+      });
     return () => {
       live = false;
     };

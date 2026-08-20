@@ -79,7 +79,13 @@ export default function App() {
   /// Null while we ask the canister whether this owner has been here before.
   /// The splash shows on the first visit ever and never again, and that flag
   /// lives in managed memory — a tile has no browser storage to keep it in.
-  const [view, setView] = useState<View | null>(viewFromHash);
+  /// Never null. The app must render without waiting on the canister: gating
+  /// first paint on a query meant that if `journal()` rejected — or simply
+  /// never settled — the whole app stayed blank forever, with no error, no
+  /// timeout and nothing for the error boundary to catch. A fresh owner has
+  /// not entered, so the splash is the honest default, and the journal only
+  /// ever *upgrades* it.
+  const [view, setView] = useState<View>(() => viewFromHash() ?? "home");
 
   /// Null means "follow the system". The preference lives on the canister,
   /// so it cannot be known synchronously — the system setting applies until
@@ -93,28 +99,36 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (view !== null) return;
+    // A shared link already decided the view; do not second-guess it.
+    if (viewFromHash() !== null) return;
     let live = true;
-    void loadJournal().then((j) => {
-      if (!live) return;
-      setView(j.flags.entered ? "oracle" : "home");
-    });
+    void loadJournal()
+      .then((j) => {
+        if (live && j.flags.entered) setView("oracle");
+      })
+      .catch(() => {
+        // The splash is already on screen and is a reasonable place to be.
+      });
     return () => {
       live = false;
     };
-    // Runs once, on the first render where no hash decided the view.
+    // Runs once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     let live = true;
-    void loadJournal().then((j) => {
-      if (!live) return;
-      const stored: ThemeChoice =
-        j.theme === "light" || j.theme === "dark" ? j.theme : null;
-      setThemeChoice(stored);
-      setResolvedTheme(applyTheme(stored));
-    });
+    void loadJournal()
+      .then((j) => {
+        if (!live) return;
+        const stored: ThemeChoice =
+          j.theme === "light" || j.theme === "dark" ? j.theme : null;
+        setThemeChoice(stored);
+        setResolvedTheme(applyTheme(stored));
+      })
+      .catch(() => {
+        // Stay on the system theme, which is already applied.
+      });
     return () => {
       live = false;
     };
@@ -141,7 +155,6 @@ export default function App() {
 
   // Reflect view in the URL so pages are shareable and the back button works.
   useEffect(() => {
-    if (view === null) return;
     document.title = TITLE[view];
     const desired = VIEW_TO_HASH[view];
     // Preserve #/reading/... deep links on history — don't rewrite them.
@@ -165,13 +178,11 @@ export default function App() {
   }, []);
 
   function enter() {
-    void setEntered();
+    // Fire and forget: if the canister is unreachable the reader still gets
+    // in, they are simply shown the splash again next time.
+    void setEntered().catch(() => undefined);
     setView("oracle");
   }
-
-  // Nothing to show until the splash question is answered. A blank beat is
-  // better than flashing the splash at someone who passed it months ago.
-  if (view === null) return null;
 
   const page =
     view === "home" ? (

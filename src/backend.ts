@@ -10,7 +10,7 @@
 /// that is normalised here, at the boundary, so the rest of the app keeps
 /// working in plain numbers and nulls.
 
-import { createCanisterClient, loadNeutronCanisterId } from "neutron-tools/app";
+import { querySelf, updateSelf } from "neutron-tools/app";
 import type { DeckState } from "./epochdeck";
 
 // ------------------------------------------------------------------- types
@@ -72,25 +72,30 @@ export interface Journal {
 }
 
 // ------------------------------------------------------------------ client
+//
+// `querySelf` and `updateSelf` are the kernel's preapproved self-call routes:
+// the tile asks the kernel to sign the call, the kernel checks the method is
+// listed in `preapproved_self_calls`, and no dialog opens. Both are free
+// functions — there is no client object with a `.call` method, whatever
+// dev/mock.ts used to pretend.
+//
+// Which of the two a method needs is fixed by `neutron.json`: a query cannot
+// commit state and an update must not be routed as a query.
 
-/// The kernel client, created once and shared. Its exact shape differs
-/// between the real SDK and dev/mock.ts, so it is held loosely here and the
-/// typing that matters is applied to each call's result instead.
-type Caller = { call(method: string, args: unknown[]): Promise<unknown> };
+const QUERIES = new Set(["journal", "history", "stats"]);
 
-let clientPromise: Promise<Caller> | null = null;
-
-function client(): Promise<Caller> {
-  if (clientPromise === null) {
-    clientPromise = (async () =>
-      createCanisterClient(await loadNeutronCanisterId()) as unknown as Caller)();
-  }
-  return clientPromise;
-}
+/// Brokered randomness makes `consult` the one slow call — it awaits
+/// `raw_rand` through the capability before it can answer.
+const TIMEOUTS: Record<string, number> = { consult: 45 };
 
 async function call<T>(method: string, args: unknown[] = []): Promise<T> {
-  const c = await client();
-  return (await c.call(method, args)) as T;
+  const route = QUERIES.has(method) ? querySelf : updateSelf;
+  const timeout = TIMEOUTS[method];
+  const result =
+    timeout === undefined
+      ? await route(method, args as never)
+      : await route(method, args as never, timeout);
+  return result as T;
 }
 
 // -------------------------------------------------------------- normalising
@@ -342,6 +347,25 @@ export async function deleteEntry(id: string): Promise<void> {
     sigils: j.sigils.filter((s) => s.id !== id),
     notes: j.notes.filter((n) => n.entryId !== id),
   }));
+}
+
+// ------------------------------------------------------------- the oracle
+
+/// The verdict variant as Candid delivers it: `?ok` / `?err` arrive as a
+/// single-key object.
+export type ConsultResult =
+  | { ok: unknown }
+  | { err: string };
+
+/// Asks the coins. The one call that awaits brokered randomness, hence its
+/// longer timeout.
+export function consultOracle(question: string): Promise<ConsultResult> {
+  return call<ConsultResult>("consult", [question]);
+}
+
+/// Every reading, newest first.
+export function loadReadings(): Promise<unknown[]> {
+  return call<unknown[]>("history", []);
 }
 
 // --------------------------------------------------------------------- deck

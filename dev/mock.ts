@@ -130,9 +130,28 @@ export async function loadNeutronCanisterId() {
   return "aaaaa-aa";
 }
 
-export function createCanisterClient(_id: string) {
-  return {
-    async call(method: string, args: any[]) {
+/// The kernel's preapproved self-call routes. This file previously exported a
+/// `createCanisterClient(...).call(method, args)` that the real SDK does not
+/// have — the app was written against the mock's invention and therefore
+/// could not work on a real kernel at all. `querySelf` and `updateSelf` are
+/// the actual API; both are free functions.
+export function querySelf(method: string, args: any[] = [], _timeout?: number) {
+  return dispatch(method, args);
+}
+
+export function updateSelf(method: string, args: any[] = [], _timeout?: number) {
+  return dispatch(method, args);
+}
+
+export function callCanisterDialog(
+  req: { method: string; args: any[] },
+  _timeout?: number,
+) {
+  return dispatch(req.method, req.args);
+}
+
+function dispatch(method: string, args: any[]) {
+  return (async () => {
       // Roughly the latency of a real update call, so the UI is honest about waiting.
       await delay(method === "consult" ? 900 : 120);
       switch (method) {
@@ -271,11 +290,7 @@ export function createCanisterClient(_id: string) {
         default:
           throw new Error(`mock: no method ${method}`);
       }
-    },
-    async callDialog(method: string, args: any[]) {
-      return this.call(method, args?.[0] ?? []);
-    },
-  };
+  })();
 }
 
 export function copyToClipboard(text: string) {

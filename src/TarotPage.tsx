@@ -56,11 +56,19 @@ export default function Tarot({ goTo }: { goTo: (v: View) => void }) {
   // validation loads as null, which simply offers a fresh shuffle.
   useEffect(() => {
     let live = true;
-    void store.load().then((d) => {
-      if (!live) return;
-      setDeck(d);
-      setLoading(false);
-    });
+    void store
+      .load()
+      .then((d) => {
+        if (live) setDeck(d);
+      })
+      .catch(() => {
+        // Without this the page sat on "Finding your deck…" forever, because
+        // the only thing clearing `loading` was the success path.
+        if (live) setError("Could not reach your deck. Reload to try again.");
+      })
+      .finally(() => {
+        if (live) setLoading(false);
+      });
     return () => {
       live = false;
     };
